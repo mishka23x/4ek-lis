@@ -196,8 +196,10 @@
    шаблона (например на дату), иначе у участниц не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-08-30';
+const TEMPLATE_VERSION = '2026-09-03';
 const DEFAULT_STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
+const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории, которая считается "челленджами" в сводке статистики
+const CHALLENGE_COMPLETE_THRESHOLD = 10; // сколько ссылок в одном задании считать "полностью выполненным челленджем"
 const EMBEDDED_TEMPLATE = {
   "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
   "coverImage": "https://ic.pics.livejournal.com/fotovivo/19078119/11206812/11206812_original.png",
@@ -219,7 +221,7 @@ const EMBEDDED_TEMPLATE = {
     },
     {
       "id": "tf3l9o4h",
-      "label": "Осенниеслова и продукты",
+      "label": "Осенние слова и продукты",
       "unit": "... постов"
     },
     {
@@ -1569,7 +1571,7 @@ function loadState(){
   }
   if(!state.progress) state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
   if(!state.progress.collapsed) state.progress.collapsed = {};
-  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}};
+  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
     if(!state.settings) state.settings = {nick:'', statsUrl: DEFAULT_STATS_URL};
   if(!state.settings.statsUrl) state.settings.statsUrl = DEFAULT_STATS_URL;
   if(state.templateVersion !== TEMPLATE_VERSION){
@@ -1691,30 +1693,26 @@ async function loadStats(){
     const data = await res.json();
     if(!data.length){ listEl.textContent = 'пока пусто'; return; }
 
-    // группировка по категориям: берём category из ответа, если есть,
-    // иначе ищем категорию по taskId в текущем шаблоне
-    const byCat = {};
+    let totalPosts = 0, challengePosts = 0, completedChallenges = 0;
     data.forEach(d=>{
       let catName = d.category;
       if(!catName && d.taskId){
         const found = findTask(d.taskId);
         if(found) catName = found.cat.name;
       }
-      if(!catName) catName = 'без категории';
-      byCat[catName] = (byCat[catName]||0) + (Number(d.count)||0);
+      const count = Number(d.count) || 0;
+      totalPosts += count;
+      if((catName||'').trim().toLowerCase() === CHALLENGE_CATEGORY_NAME.toLowerCase()){
+        challengePosts += count;
+        if(count >= CHALLENGE_COMPLETE_THRESHOLD) completedChallenges++;
+      }
     });
-    const plannedByCat = {};
-    state.categories.forEach(c=>{ plannedByCat[c.name] = c.tasks.length; });
 
-    const catRows = Object.keys(byCat).map(name=>{
-      const planned = plannedByCat[name];
-      const plannedTxt = planned!=null ? ` из ${planned} намеченных` : '';
-      return `<div>${escHtml(name)}: <b class="mono">${byCat[name]}</b> постов${plannedTxt}</div>`;
-    }).join('');
-
-    const detailRows = data.slice(0,15).map((d,i)=>`<div class="hint">${i+1}. ${escHtml(d.task)} — <b class="mono">${d.count}</b></div>`).join('');
-
-    listEl.innerHTML = `<div style="margin-bottom:8px;">${catRows || '<span class="hint">нет данных по категориям</span>'}</div><div>${detailRows}</div>`;
+    listEl.innerHTML = `
+      <div>Всего постов: <b class="mono">${totalPosts}</b></div>
+      <div>Из них в челленджах: <b class="mono">${challengePosts}</b></div>
+      <div>Полностью выполненных челленджей: <b class="mono">${completedChallenges}</b></div>
+    `;
   }catch(e){
     listEl.textContent = 'не удалось загрузить (проверьте URL и что Apps Script передеплоен)';
   }
@@ -1893,21 +1891,33 @@ function celebrate(message, emojis, count){
   }
 }
 
-function checkMilestones(taskId){
-  const found = findTask(taskId);
-  if(!found) return;
-  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}};
+function checkTaskLinkMilestone(taskId){
+  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
+  if(!state.progress.milestones.tasks) state.progress.milestones.tasks = {};
 
-  const totalDone = Object.values(state.progress.tasks).filter(t=>t.checked).length;
-  const catDone = found.cat.tasks.filter(t=>getTaskState(t.id).checked).length;
+  const ts = getTaskState(taskId);
+  const validCount = ts.sentSlots.filter(Boolean).length; // сколько ссылок в этом задании реально приняты (не дубли и не мусор)
 
-  if(totalDone > 0 && totalDone % 10 === 0 && totalDone > state.progress.milestones.global){
-    state.progress.milestones.global = totalDone;
-    celebrate(`Десять сделано! Уже ${totalDone} 🍬`, ['🍬','🍭','🍫'], 16);
+  if(validCount > 0 && validCount % CHALLENGE_COMPLETE_THRESHOLD === 0 && validCount > (state.progress.milestones.tasks[taskId]||0)){
+    state.progress.milestones.tasks[taskId] = validCount;
+    const found = findTask(taskId);
+    const label = found ? found.task.text.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*\*/g,'') : 'задание';
+    celebrate(`«${label}» — ${validCount} ссылок в одном задании! 🎆`, ['🏆','✨','🎆','🎉'], 28);
   }
-  if(catDone > 0 && catDone % 10 === 0 && catDone > (state.progress.milestones.cats[found.cat.id]||0)){
-    state.progress.milestones.cats[found.cat.id] = catDone;
-    celebrate(`«${found.cat.name}» — уже ${catDone}! 🎆`, ['💖','✨','🍩','🍁'], 24);
+  save();
+}
+
+function checkGlobalLinkMilestone(){
+  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
+
+  // Для праздника считаем все корректно заполненные ссылки в чек-листе,
+  // независимо от того, успела ли статистика отправиться.
+  const totalLinks = Object.values(state.progress.tasks)
+    .reduce((sum,t) => sum + (t.links ? t.links.filter(v => isLikelyUrl(v)).length : 0), 0);
+
+  if(totalLinks > 0 && totalLinks % CHALLENGE_COMPLETE_THRESHOLD === 0 && totalLinks > state.progress.milestones.global){
+    state.progress.milestones.global = totalLinks;
+    celebrate(`Респект! Уже ${totalLinks} 🍬`, ['🍬','🍭','🍫'], 16);
   }
   save();
 }
@@ -1919,7 +1929,6 @@ document.getElementById('categoriesView').addEventListener('change', e=>{
     ts.checked = e.target.checked;
     if(ts.checked && ts.links.length===0) ts.links=[''];
     save(); renderMarathon();
-    if(ts.checked) checkMilestones(id);
   }
 });
 document.getElementById('categoriesView').addEventListener('input', e=>{
@@ -1930,9 +1939,12 @@ document.getElementById('categoriesView').addEventListener('input', e=>{
     ts.links[idx] = e.target.value;
     if(idx === ts.links.length-1 && e.target.value.trim()!==''){
       ts.links.push('');
-      save(); renderMarathon();
+      save();
+      checkGlobalLinkMilestone();
+      renderMarathon();
     } else {
       save();
+      checkGlobalLinkMilestone();
     }
   }
 });
@@ -1961,6 +1973,8 @@ document.getElementById('categoriesView').addEventListener('focusout', e=>{
       sendStat({category: found.cat.name, task: found.task.text, taskId: id, idx});
       ts.sentSlots[idx] = true;
       save();
+      checkTaskLinkMilestone(id);
+      checkGlobalLinkMilestone();
     }
   }
 });
@@ -2024,7 +2038,7 @@ document.getElementById('fileInputFull').addEventListener('change', e=>{
       state = JSON.parse(r.result);
       if(!state.progress) state.progress={quotaTargets:{}, tasks:{}, collapsed:{}};
       if(!state.progress.collapsed) state.progress.collapsed = {};
-      if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}};
+      if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
       if(!state.settings) state.settings={nick:'', statsUrl:''};
       save(); renderMarathon();
     }catch(err){ alert('Не удалось прочитать сохраненный файл'); }
@@ -2067,4 +2081,3 @@ document.getElementById('typoForm').addEventListener('submit', function(e) {
 </script>
 </body>
 </html>
-
