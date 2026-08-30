@@ -186,16 +186,15 @@
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
 const TEMPLATE_VERSION = '2026-08-19';
-const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории, которая считается "челленджами" в сводке статистики
-const CHALLENGE_COMPLETE_THRESHOLD = 10; // сколько ссылок в одном задании считать "полностью выполненным челленджем"
+const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
+const CHALLENGE_COMPLETE_THRESHOLD = 10; // ссылок в одном задании считать "полностью выполненным челленджем"
 
-/* Финальная отправка итогов — один раз, по кнопке, в конце сезона.
-   FINAL_STATS_URL — ссылка на деплой Apps Script (см. отдельный файл скрипта).
-   FINAL_TOKEN — секретная строка, должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
-   Это не защита от целенаправленной атаки (то и другое видно в исходниках),
-   а просто фильтр от случайного мусора автоматических сканеров. */
-const FINAL_STATS_URL = 'https://script.google.com/macros/s/ВСТАВЬТЕ_СЮДА_ID_ДЕПЛОЯ/exec';
-const FINAL_TOKEN = 'ВСТАВЬТЕ_СЮДА_СВОЙ_СЕКРЕТ';
+/* Финальная отправка итогов — один раз.
+   FINAL_STATS_URL — ссылка на деплой Apps Script.
+   FINAL_TOKEN — с. строка, должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
+    */
+const FINAL_STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
+const FINAL_TOKEN = 'ВСТАВЬТЕ_СЮДА_СВОЙ_Токен';
 
 const EMBEDDED_TEMPLATE = {
   "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
