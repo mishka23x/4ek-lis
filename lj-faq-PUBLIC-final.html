@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FAQ</title>
+<style>
+  :root{
+    --text-scale:1.40;
+    --paper:#F7F1E4; --paper-2:#EFE7D2; --ink:#2B2A24; --ink-soft:#6B6656;
+    --forest:#2F4A3D; --forest-2:#456654; --amber:#B8752E; --amber-soft:#EADFC4;
+    --coral:#B14A3B; --line:#DCD0AE; --radius:10px;
+    --font-display: Segoe UI Variable, Roboto, Arial, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-mono: 'Courier New', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); line-height:1.5; }
+  h1{font-family:var(--font-display); margin:0; color:var(--forest);}
+  header.top{ padding:22px 24px 16px; border-bottom:1px solid var(--line); }
+  header.top h1{font-size:calc(26px * var(--text-scale)); font-weight:700;}
+  header.top .sub{color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin-top:2px;}
+  main{max-width:900px; margin:0 auto; padding:20px 24px 60px;}
+
+  main a{ color:var(--forest); text-decoration:none; border-bottom:1px solid var(--amber); padding-bottom:1px; }
+  main a:hover{ color:var(--amber); border-bottom-color:var(--forest); }
+  a.tag-link{ display:inline-block; color:var(--forest); font-weight:600; border:1px solid var(--amber); border-radius:999px; padding:1px 10px 2px; font-size:1.1em; border-bottom:none; text-decoration:none; }
+  a.tag-link:hover{ background:var(--forest); color:var(--paper); border-color:var(--forest); }
+
+  .faq-item{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
+  .faq-item summary{
+    list-style:none; cursor:pointer; padding:14px 46px 14px 18px; position:relative;
+    font-weight:700; color:var(--forest); font-size:calc(16px * var(--text-scale));
+  }
+  .faq-item summary::-webkit-details-marker{ display:none; }
+  .faq-item summary::after{
+    content:'+'; position:absolute; right:16px; top:50%; transform:translateY(-50%);
+    color:var(--amber); font-size:calc(20px * var(--text-scale)); line-height:1; font-weight:400;
+  }
+  .faq-item[open] summary::after{ content:'–'; }
+  .faq-item[open] summary{ border-bottom:1px solid var(--line); }
+  .faq-answer{ padding:14px 18px 16px; color:var(--ink); font-size:calc(14px * var(--text-scale)); white-space:pre-line; }
+  .empty{color:var(--ink-soft); font-style:italic; font-size:calc(14px * var(--text-scale));}
+
+  .checklist-link{
+    display:inline-block; margin-top:12px; color:var(--forest); font-family:var(--font-display);
+    font-weight:700; font-size:calc(36px * var(--text-scale)); text-decoration:none;
+   padding-bottom:2px;
+  }
+  .checklist-link:hover{ color:var(--amber); border-bottom-color:var(--forest); }
+.header-line {
+    display: flex;
+    align-items: baseline;
+}
+
+.header-line h1 {
+    margin: 0;
+}
+
+.header-text {
+    flex: 1;
+    text-align: center;
+    white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+    .header-line {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .header-text {
+        width: 100%;
+        text-align: left;
+        white-space: normal;
+    }
+}
+
+  .card{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-top:22px; }
+  .card h3{ font-family:var(--font-display); color:var(--forest); margin:0 0 6px; font-size:calc(17px * var(--text-scale)); }
+  .card .hint{ color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin:0 0 12px; }
+  .card input[type=text], .card textarea{
+    width:100%; box-sizing:border-box; font-family:var(--font-body); font-size:calc(14px * var(--text-scale));
+    padding:9px 11px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); margin-bottom:8px;
+  }
+  .card textarea{ min-height:90px; resize:vertical; }
+  .card button{
+    background:var(--forest); color:var(--paper); border:none; padding:10px 20px;
+    border-radius:7px; font-weight:600; cursor:pointer; font-size:calc(14px * var(--text-scale)); font-family:var(--font-body);
+  }
+  .card button:hover{ background:var(--forest-2); }
+  .card button:disabled{ opacity:.5; cursor:default; }
+  #askStatus{ margin-top:10px; font-size:calc(13px * var(--text-scale)); color:var(--ink-soft); }
+</style>
+</head>
+<body>
+
+<div class="header-line">
+<header class="top">
+  <h1 id="faqTitle">🦊 ЧАВО </h1>
+  <div class="sub" id="faqSub">частые вопросы</div>
+  <div class="header-text"><a href="checklist.html" class="checklist-link">📋 Перейти к 4ек-Лису</a></div>
+</header>
+</div>
+
+<main>
+  <div id="faqList"></div>
+
+  <div class="card">
+    <h3>Задайте свой вопрос</h3>
+    <input type="text" id="askNick" placeholder="Ваш ник">
+    <textarea id="askText" placeholder="Ваш вопрос..."></textarea>
+    <button id="askSubmit">Отправить</button>
+    <div id="askStatus"></div>
+  </div>
+</main>
+
+<script>
+/* ============================================================
+   ШАБЛОН СТРАНИЦЫ — единственное место, которое меняется вручную.
+   Вставь сюда содержимое файла faq-shablon.json, экспортированного
+   из конструктора (кнопка "⇩ шаблон"). TEMPLATE_VERSION — любая
+   строка, меняй при каждом обновлении (например на дату).
+   ============================================================ */
+const TEMPLATE_VERSION = '2026-08-29';
+const EMBEDDED_TEMPLATE = {
+  "title": "ЧАВО по чек-листу и его функциям",
+  "items": [
+    {
+      "q": "Нужна ли регистрация на сайте, куда вводить пароль?",
+      "a": "Регистрация не требуется, вход свободный, без пароля."
+    },
+    {
+      "q": "Какой ник использовать для авторизации, от ЖЖ или произвольный?",
+      "a": "— Можно любой, из ЖЖ, из других соц.сетей или придуманный только что. Страница доступна в любом случае.\nОбщая статистика по итогам марафона будет подсчитана для участников сообщества [4ek-lis](https://4ek-lis.livejournal.com)."    },
+    {
+      "q": "Заполненный мной чек-лист виден всем в сети?",
+      "a": "— Не виден никому. Данные хранятся в памяти браузера и не выходят за пределы компьютера. Статистика учитывает только количество заполненных чек-боксов, но их содержимое никуда не отправляется. \n- Как следствие: Чек-лист от 4ek-Lisa может использовать кто угодно по своему усмотрению, не зависимо от аккаунта в ЖЖ."
+    },
+    {
+      "q": "Почему рядом с полем для ссылки появляется предупреждение со значком ⚠?",
+      "a": "— Сообщение «такая ссылка уже есть» предупреждает о дубликатах, а  «не похоже на ссылку» - если в форму попадает случайный текст, а не link. \nСкрипт не проверяет адреса, относятся ли они к актуальному посту в блоге или к сайту прогноз-погоды. Это дело автора, какие списки хранить в органайзере. Некорректная ссылка — в статистику не попадает"
+    },
+    {
+      "q": "Что будет с заполененным чек-листом, если я закрою браузер?",
+      "a": "— Все записи сохранятся, они переживут и перезагрузку и выключение компьютера. Не переживут - переустановку браузера или удаление кеша.\nНа этот случай рекомендуется предварительно сделать бэкап: кнопка \"Мой прогресс ⬆️\", позже можно будет восстановить состояние страницы из файла."
+    },
+    {
+      "q": "Я все заполнил на ноутбуке, зашел с мобильного с тем же ником - а чек-лист пуст, как так?",
+      "a": "— Чек-Лист можно просматривать и дополнять только в одном браузере, на одном устройстве (это не наш выбор, а техническое ограничение платформы)"
+    },
+    {
+      "q": "Заданий так много, я не успею столько написать за осень...",
+      "a": "— Марафонские челленджи и хешмобы - это не предписание, а \"инфоповод\" для публикаций и обсуждений с людьми, разделяющими ваши увлечения (снимать птиц или крышки люков и делиться фотоснимками в блоге - интересней, чем хранить в папке на диске), заполнять вообще все разделы чек-листа или как можно больше - совершенно ни к чему."
+    },
+    {
+      "q": "Зачем вообще нужны челленджи? Напишу, сколько напишется, когда и если захочется, для чего мне отчитываться?",
+      "a": "— Чек-лист - это органайзер, а не контролер. А еще - \"красочное меню\" (порой \"аппетит приходит во время еды\"). \nРешил вести дневник: челленджи (\"пацан сказал - пацан сделал\") - визуализируют намерение и помогают следовать этому решению, тем более в сообществе коллег по марафону."
+    },
+    {
+      "q": "Что за фейерверк на экране, когда я отмечаю десятое задание?",
+      "a": "— Чисто для настроения, на \"седло большое, ковер и телевизор в подарок...\" рассчитывать не приходится, вместо призов - маленький бонус от Чек-Лися."
+    },
+    {
+      "q": "Что по итогам, для успешно \"пробежавших намеченную в чек-листе дистанцию\"?",
+      "a": "—  Чувство глубокого удовлетворения и одобрение друзей из френдленты, поздравительный баннер и значок в профиль ЖЖ."
+    },
+    {
+      "q": "А что за Чек-Лись такой?",
+      "a": "Талисман творческих марафонов, со своей [историей](https://4ek-lis.livejournal.com/392.html). "
+    }
+  ]
+};
+/* ============================================================ */
+
+function escHtml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function formatText(s){
+  let out = escHtml(s);
+  out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, text, url)=>{
+    const cls = text.trim().startsWith('#') ? ' class="tag-link"' : '';
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer"${cls}>${text}</a>`;
+  });
+  out = out.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  return out;
+}
+
+document.getElementById('faqTitle').textContent = '🦊 ' + (EMBEDDED_TEMPLATE.title || 'ЧАВО');
+
+const listEl = document.getElementById('faqList');
+const items = Array.isArray(EMBEDDED_TEMPLATE.items) ? EMBEDDED_TEMPLATE.items : [];
+listEl.innerHTML = items.map((it, i) => `
+  <details class="faq-item" ${i===0 ? 'open' : ''}>
+    <summary>${formatText(it.q || '')}</summary>
+    <div class="faq-answer">${formatText(it.a || '')}</div>
+  </details>
+`).join('') || '<div class="empty">вопросов пока нет</div>';
+
+const STATS_URL = 'https://script.google.com/macros/s/AKfycbxEyJsVyA0ob6vLd7-6FJq9g9inELM1LRFAHvLHPsmq_6fTbkBKDt1YNpIQIwbWByud/exec';
+
+document.getElementById('askSubmit').addEventListener('click', ()=>{
+  const nick = document.getElementById('askNick').value.trim();
+  const text = document.getElementById('askText').value.trim();
+  const statusEl = document.getElementById('askStatus');
+  const btn = document.getElementById('askSubmit');
+
+  if(!text){ statusEl.textContent = 'Сначала напишите вопрос.'; return; }
+
+  btn.disabled = true;
+  fetch(STATS_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain;charset=utf-8'},
+    body: JSON.stringify({type: 'question', ts: new Date().toISOString(), nick: nick || 'аноним', text})
+  }).catch(()=>{});
+
+  statusEl.textContent = 'Спасибо! Вопрос отправлен.';
+  document.getElementById('askText').value = '';
+  setTimeout(()=>{ btn.disabled = false; }, 3000);
+});
+</script>
+</body>
+</html>

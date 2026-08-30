@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>4ek-list</title>
+<style>
+  :root{
+     --text-scale:1.40;
+    --paper:#F7F1E4; --paper-2:#EFE7D2; --ink:#2B2A24; --ink-soft:#6B6656;
+    --forest:#2F4A3D; --forest-2:#456654; --amber:#B8752E; --amber-soft:#EADFC4;
+    --coral:#B14A3B; --line:#DCD0AE; --radius:10px;
+    --font-display: Segoe UI Variable, Roboto, Arial, sans-serif;
+    --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-mono: 'Courier New', Consolas, monospace;
+  }
+  *{box-sizing:border-box;}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); line-height:1.5; padding-bottom:90px; }
+  h1,h2,h3{font-family:var(--font-display); margin:0; color:var(--forest);}
+  .mono{font-family:var(--font-mono);}
+  header.top{ padding:22px 24px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+  header.top h1{font-size:calc(26px * var(--text-scale)); font-weight:700;}
+  header.top .sub{color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin-top:2px;}
+  .iobar{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
+  button.ghost{ border:1px solid var(--line); background:transparent; color:var(--ink-soft); padding:7px 12px; border-radius:8px; font-size:calc(12px * var(--text-scale)); cursor:pointer; font-family:var(--font-body); }
+  button.ghost:hover{border-color:var(--forest); color:var(--forest);}
+  main{max-width:1300px; margin:0 auto; padding:20px 24px;}
+  .card{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:18px; }
+  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
+  input[type=text], input[type=number]{ font-family:var(--font-body); font-size:calc(14px * var(--text-scale)); padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); }
+  .cat-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
+  .cat-header h3{font-size:calc(18px * var(--text-scale));}
+  .task-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;}
+  @media (max-width:640px){.task-grid{grid-template-columns:1fr;}}
+   .task-card{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fffefb; }
+   .task-card.done{background:var(--amber-soft); border-color:var(--amber);}
+   .task-card-inner{display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:10px; align-items:start;}
+   .task-card label{display:flex; gap:8px; align-items:flex-start; cursor:pointer; font-size:calc(14px * var(--text-scale)); min-width:0;}
+   .task-card label span{white-space:pre-line;}
+   .task-card input[type=checkbox]{margin-top:4px; width:18px; height:18px; accent-color:var(--forest); flex:none;}
+   .task-card .task-marks{grid-column:2; grid-row:1; display:flex; flex-direction:column; gap:5px; margin:0;}
+   .task-card .links{grid-column:1 / -1; margin:8px 0 0 26px; display:flex; flex-direction:column; gap:6px;}
+  .link-field{display:flex; flex-direction:column; gap:2px;}
+  .link-row{display:flex; align-items:center; gap:6px;}
+  .link-num{color:var(--ink-soft); font-weight:700; font-size:calc(12px * var(--text-scale)); flex:none; min-width:1.6em; text-align:right;}
+  .link-row input{flex:1; min-width:0;}
+  .links input{font-size:calc(12px * var(--text-scale)); padding:6px 8px;}
+  .links input.link-bad{border-color:var(--coral); background:#FBEAE6;}
+  .link-warn{font-size:calc(11px * var(--text-scale)); color:var(--coral);}
+  .quotas{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:6px;}
+  .quota{border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fffefb;}
+  .quota .label{font-size:calc(13px * var(--text-scale)); color:var(--ink-soft); margin-bottom:6px;}
+  .quota .set{display:flex; align-items:center; gap:8px;}
+  .quota input[type=number]{width:70px;}
+  footer.progress{ position:fixed; bottom:0; left:0; right:0; background:#fffdf8; border-top:1px solid var(--line); padding:10px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .bar-wrap{flex:1; min-width:200px; height:10px; background:var(--paper-2); border-radius:999px; overflow:hidden;}
+  .bar-fill{height:100%; background:var(--amber); transition:width .3s;}
+  .progress-num{font-family:var(--font-mono); font-weight:700; color:var(--forest); white-space:nowrap;}
+  .hint{color:var(--ink-soft); font-size:calc(12px * var(--text-scale)); margin-top:6px;}
+  .empty{color:var(--ink-soft); font-style:italic; font-size:calc(14px * var(--text-scale));}
+  #fileInputFull{display:none;}
+
+  main a, .cat-desc a{ color:var(--forest); text-decoration:none; border-bottom:1px solid var(--amber); padding-bottom:1px; }
+  main a:hover, .cat-desc a:hover{ color:var(--amber-2,var(--amber)); border-bottom-color:var(--forest); }
+  a.tag-link{ display:inline-block; ; color:var(--forest); font-weight: 600; border:1px solid var(--amber); border-radius:999px; padding:1px 10px 2px; font-size:1.2em; border-bottom:none; text-decoration:none; }
+  a.tag-link:hover{ background:var(--forest); color:var(--paper); border-color:var(--forest); }
+
+  #coverImageWrap{ max-width:1300px; margin:0 auto 18px; padding:0 24px; }
+  #coverImageWrap img{ width:100%; display:block; border-radius:var(--radius); border:1px solid var(--line); }
+
+  .cat-desc{ font-size:calc(18px * var(--text-scale)); font-weight: 700; color:var(--ink-soft); border-radius:8px; padding:6px 10px; margin-bottom:8px; white-space:pre-line; }
+
+  .cat-toggle{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:12px; margin-right:8px; transition:transform .15s; flex:none; }
+  .cat-toggle:hover{ border-color:var(--forest); color:var(--forest); }
+  .card.collapsed .cat-body{ display:none; }
+  .collapse-toolbar{ display:flex; justify-content:flex-end; gap:8px; margin:2px 0 10px; }
+
+  .mark-btn{ border:1px solid var(--line); background:#fff; color:var(--ink-soft); width:30px; height:30px; border-radius:6px; cursor:pointer; font-size:calc(13px * var(--text-scale)); line-height:1; display:flex; align-items:center; justify-content:center; padding:0; }
+  .mark-btn:hover{ border-color:var(--forest); color:var(--forest); }
+  .mark-btn.on{ background:var(--amber-soft); border-color:var(--amber); color:var(--amber); }
+  .mark-btn.on[data-mark*="|liked"]{ background:#F6D9D2; border-color:var(--coral); color:var(--coral); }
+
+  .typo-strip{ max-width:1300px; margin:0 auto 24px; padding:0 24px; }
+  .typo-row{ display:flex; align-items:center; gap:10px; background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:6px 8px 6px 16px; }
+  .typo-row .typo-label{ color:var(--ink-soft); font-size:calc(12px * var(--text-scale)); white-space:nowrap; }
+  .typo-row input[type=text]{ flex:1; min-width:0; border:none; background:transparent; padding:6px 4px; font-size:calc(13px * var(--text-scale)); color:var(--ink); }
+  .typo-row input[type=text]:focus{ outline:none; }
+  .typo-row button{ flex:none; }
+  .typo-thanks{ color:var(--forest); font-size:calc(12px * var(--text-scale)); padding:6px 16px; }
+  .task-num{ color:var(--ink-soft); font-weight:700; }
+  #celebrateLayer{position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;}
+  .celebrate-msg{
+    position:fixed; top:16%; left:50%; transform:translate(-50%,-40px) scale(.8);
+    background:var(--forest); color:var(--paper); font-family:var(--font-display);
+    font-weight:700; font-size:calc(18px * var(--text-scale)); padding:14px 26px;
+    border-radius:999px; box-shadow:0 8px 24px rgba(0,0,0,.25); text-align:center;
+    opacity:0; animation:celebrateMsg 2.6s ease forwards; max-width:80vw;
+  }
+  @keyframes celebrateMsg{
+    0%{opacity:0; transform:translate(-50%,-40px) scale(.8);}
+    12%{opacity:1; transform:translate(-50%,0) scale(1);}
+    80%{opacity:1;}
+    100%{opacity:0; transform:translate(-50%,-10px) scale(.95);}
+  }
+  .celebrate-particle{
+    position:fixed; top:-40px; font-size:calc(22px * var(--text-scale));
+    animation-name:celebrateFall; animation-timing-function:ease-in; animation-fill-mode:forwards;
+  }
+  @keyframes celebrateFall{
+    0%{ transform:translateY(0) rotate(0deg); opacity:1; }
+    100%{ transform:translateY(100vh) rotate(360deg); opacity:0; }
+  }  .faq-link{
+    color:var(--forest); font-family:var(--font-display); font-weight:700;
+    font-size:calc(15px * var(--text-scale)); text-decoration:none;
+    border-bottom:2px solid var(--amber); padding-bottom:1px; margin-right:6px;
+  }
+  .faq-link:hover{ color:var(--amber); border-bottom-color:var(--forest); }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div>
+    <h1 id="marathonTitle">🦊 Чек-листы от Чек-Лися </h1>
+    <div class="sub">Органайзер для марафонских хешмобов и челленджей</div>
+  </div>
+  <div class="iobar">
+    <button class="ghost" id="exportFull">⇧ сохранить</button>
+    <button class="ghost" id="importFullBtn">⇩ восстановить</button>
+    <a href="СЮДА_ССЫЛКА_НА_ЧАВО" class="faq-link" target="_blank" rel="noopener noreferrer">❓ЧАВО</a>
+    <button class="ghost" id="resetAllBtn" style="border-color:var(--coral); color:var(--coral);">✕ сбросить всё</button>
+    <input type="file" id="fileInputFull" accept=".json">
+  </div>
+</header>
+
+<div id="announceBlock" style="width:100%; box-sizing:border-box;">
+  <!-- ЗДЕСЬ МОЖНО ВСТАВИТЬ СВОЙ HTML-БЛОК ВО ВСЮ ШИРИНУ СТРАНИЦЫ.
+       Контейнер уже растянут на 100% ширины — просто пишите внутри
+       обычные теги (p, img, table и т.п.), как раньше, без вёрстки.
+       Пусто — ничего не отображается. -->
+</div>
+
+
+<div id="coverImageWrap" style="display:none;"><img id="coverImageImg" alt=""></div>
+
+<main>
+  <div class="card" id="syncCard">
+    <h3 style="margin-bottom:10px;">Подсчет статистики</h3>
+    <div class="row">
+      <div>
+        <label class="hint" style="display:block;">Ник (для синхронизации)</label>
+        <input type="text" id="nickInput" style="width:180px;">
+      </div>
+      <div style="display:none;">
+        <label class="hint" style="display:block;">URL приёмника (Google Apps Script)</label>
+        <div class="row" style="gap:6px;">
+          <input type="text" id="statsUrlInput" style="width:300px;" placeholder="https://script.google.com/macros/s/.../exec">
+          <button class="ghost" id="testUrlBtn">проверить</button>
+        </div>
+        <div class="hint" id="urlCheckStatus"></div>
+      </div>
+    </div>
+    <div class="hint" style="margin-top:6px;" id="queueBadge"></div>
+    <div class="hint">Пусто — всё остаётся только у вас локально.</div>
+  </div>
+  <div class="card" id="statsCard" style="display:none;">
+    <div class="row" style="justify-content:space-between;">
+      <h3>Статистика марафона</h3>
+      <button class="ghost" id="refreshStats">↻ обновить</button>
+    </div>
+    <div id="statsList" class="hint">пока не запрашивали</div>
+  </div>
+  <div class="card">
+    <h3 style="margin-bottom:10px;">Планы на сезон 10 | 30 | 60 | 90</h3>
+    <div class="quotas" id="quotasList"></div>
+  </div>
+  <div class="collapse-toolbar">
+    <button class="ghost" id="collapseAllBtn">▸ свернуть все</button>
+    <button class="ghost" id="expandAllBtn">▾ развернуть все</button>
+  </div>
+  <div id="categoriesView"></div>
+</main>
+
+<footer class="progress">
+  <span class="progress-num" id="progressLabel">0 / 0</span>
+  <div class="bar-wrap"><div class="bar-fill" id="progressBarFill" style="width:0%"></div></div>
+  <span class="hint" id="progressPct">0%</span>
+</footer>
+
+<script>
+/* ============================================================
+   ШАБЛОН СЕЗОНА — единственное место, которое меняется вручную.
+   Вставь сюда содержимое файла marathon-shablon.json,
+   экспортированного из АДМИН-версии (кнопка "⇩ шаблон").
+   TEMPLATE_VERSION — любая строка; меняй её при каждом обновлении
+   шаблона (например на дату), иначе у участниц не подтянутся
+   новые категории/задания — старая версия просто останется как есть.
+   ============================================================ */
+const TEMPLATE_VERSION = '2026-08-22';
+const DEFAULT_STATS_URL = 'https://script.google.com/macros/s/AKfycbxEyJsVyA0ob6vLd7-6FJq9g9inELM1LRFAHvLHPsmq_6fTbkBKDt1YNpIQIwbWByud/exec';
+const EMBEDDED_TEMPLATE = {
+  "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
+  "coverImage": "https://ic.pics.livejournal.com/fotovivo/19078119/11206812/11206812_original.png",
+  "quotas": [
+    {
+      "id": "tozswlic",
+      "label": "Намеченное количество постов",
+      "unit": "... на осень"
+    },
+    {
+      "id": "tsrslfzm",
+      "label": "#Марафонское и #ЖЖ-форматы",
+      "unit": "... постов"
+    },
+    {
+      "id": "tr0vux2j",
+      "label": "Вопросы-размышления от ИИ",
+      "unit": "... постов"
+    },
+    {
+      "id": "tf3l9o4h",
+      "label": "Осенниеслова и продукты",
+      "unit": "... постов"
+    },
+    {
+      "id": "tskhtji8",
+      "label": "Авторские задания",
+      "unit": "... постов"
+    },
+    {
+      "id": "t2a3v52o",
+      "label": "По хешмобам",
+      "unit": "...хешмобов"
+    },
+    {
+      "id": "tlabj8ip",
+      "label": "Челленджи",
+      "unit": "... челленджей"
+    },
+    {
+      "id": "tuvuaw1x",
+      "label": "#нескучныедаты",
+      "unit": "... постов"
+    }
+  ],
+  "categories": [
+    {
+      "id": "tbzu3a5k",
+      "name": "ИДЕИ И ИНФОПОВОДЫ, О ЧЕМ НАПИСАТЬ: #МАРАФОНСКИЕ",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "tfx6utys",
+          "text": "Расскажите, как вы вписались в марафоны: что вас подтолкнуло к участию и что это вам в итоге дало?"
+        },
+        {
+          "id": "tc8ao9ln",
+          "text": "Расскажите друзьям о летних (или около того) марафонских приключениях. Какие ожидания и надежды оправдались, а какие — нет?"
+        },
+        {
+          "id": "ttcx7dtz",
+          "text": "«Для чего мне чек-лист?» Выпишите в посте самые интересные для вас задания и челленджи, которые собираетесь выполнить. Публичное обещание «сделаю то-то» — половина смысла челленджа! =)"
+        },
+        {
+          "id": "tvb7tgn9",
+          "text": "Какие летние посты оказались самыми удачными? О чём вы чаще всего писали в марафоне #сновалето?"
+        },
+        {
+          "id": "tb2zk6f9",
+          "text": "Сделайте пост с подборкой лучших летних фотографий. Подпишите их: где и что на каждой фотографии."
+        },
+        {
+          "id": "tkpnpayl",
+          "text": "Расскажите о ваших планах на осень. Об отмеченных заданиях из чек-листа."
+        },
+        {
+          "id": "tg01683g",
+          "text": "Расскажите о коллегах по марафону: кто из авторов вам особенно по душе? Какие темы или записи запомнились?"
+        },
+        {
+          "id": "tqit18q0",
+          "text": "Расскажите о читателях вашего блога: кто о чём пишет, что знает и умеет, что интересного вы почерпнули из ленты? Поблагодарите читателей за поддержку и внимание к вашему журналу."
+        },
+        {
+          "id": "tek93rej",
+          "text": "«Марафон сам себя не пробежит». Расскажите на личном опыте, сколько времени занимает ведение ЖЖ, как вы с этим справляетесь и как оптимизируете процесс."
+        },
+        {
+          "id": "tjch3nix",
+          "text": "Поменяйте оформление или обложку своего блога на осеннее и расскажите друзьям, как вы это сделали."
+        }
+      ]
+    },
+    {
+      "id": "tx8ztbj1",
+      "name": "ИДЕИ И ИНФОПОВОДЫ, О ЧЕМ НАПИСАТЬ: #ЖЖ-ФОРМАТЫ",
+      "desc": "используйте инструменты ЖЖ:",
+      "tasks": [
+        {
+          "id": "tem62cr0",
+          "text": "Опубликуйте опрос на любую тему."
+        },
+        {
+          "id": "tjdql7hu",
+          "text": "Опубликуйте пост-список. Например: «10 ...»."
+        },
+        {
+          "id": "tychu2om",
+          "text": "Составьте дайджест."
+        },
+        {
+          "id": "txdv87yo",
+          "text": "Сделайте коллаж."
+        },
+        {
+          "id": "tqqhhy33",
+          "text": "Соберите во встроенном приложении Canva открытку к любому событию"
+        },
+        {
+          "id": "trwhxrz5",
+          "text": "Опубликуйте пост с фильмом, загруженным в альбомы ЖЖ."
+        },
+        {
+          "id": "tateb3da",
+          "text": "Напишите пост с цитатами, оформленными специальными выносками (в редакторе новой записи)"
+        },
+        {
+          "id": "tnp5kuwp",
+          "text": "Напишите пост с примером полезного кода (и пояснением для чайников, что это)"
+        },
+        {
+          "id": "twxvi57q",
+          "text": "Сделайте слайд-шоу (из иллюстраций с подписями) в альбоме ЖЖ и поделитесь этим альбомом в посте."
+        },
+        {
+          "id": "t6i85mvx",
+          "text": "Опубликуйте «пост из комментария»."
+        },
+        {
+          "id": "tq60ksij",
+          "text": "Опубликуйте статистику, используя любые доступные источники ЖЖ: поисковую страницу, страницы рейтингов, статистику блога и т. д."
+        },
+        {
+          "id": "tvgpe3pe",
+          "text": "Отправьте новый пост в свой блог по почте."
+        },
+        {
+          "id": "taoldmua",
+          "text": "Запостите короткую запись с картинкой через мобильное  приложение."
+        },
+        {
+          "id": "teyi09vw",
+          "text": "Напишите длинный обстоятельный пост-лонгрид."
+        },
+        {
+          "id": "txkgdr06",
+          "text": "#раскопайсвоихнетленок, ретропостинг, вторая жизнь старых записей - как бы вы сейчас об этом написали, что добавили, что изменили?"
+        },
+        {
+          "id": "tmox0nek",
+          "text": "Запостите фоторассказ, составленный по всем правилам драматургии: зачин, кульминация, развязка."
+        },
+        {
+          "id": "td0j3q61",
+          "text": "Посоветуйтесь о чём-нибудь с читателями своего блога."
+        },
+        {
+          "id": "t2f9wj7e",
+          "text": "Поблагодарите в своей записи того (или тех), чей пост в ЖЖ оказался для вас полезным."
+        },
+        {
+          "id": "t9mbflqd",
+          "text": "Сделайте интервью с кем-либо (или даже — с чем-либо)."
+        },
+        {
+          "id": "tvnk61t2",
+          "text": "Напишите пост на тему «Один мой день»."
+        },
+        {
+          "id": "tpfjyhqo",
+          "text": "«Мой первый раз с... или в...» или «Первый раз, когда я...»."
+        },
+        {
+          "id": "tfkrt5s7",
+          "text": "Напишите «Открытое письмо» — кому-то известному либо личному знакомому; герою книги или фильма; себе в прошлом; общественной организации или даже природному явлению."
+        },
+        {
+          "id": "tq19fqqw",
+          "text": "Напишите пост-сравнение: плюсы и минусы того и другого — товара, сервиса, маршрута — чего угодно. Юмористическое сравнение «бегемота с кашалотом» приветствуется."
+        },
+        {
+          "id": "thecodme",
+          "text": "Предложите френдам игру, эстафету или блиц-хешмоб."
+        },
+        {
+          "id": "t5p9wzjh",
+          "text": "Составьте список-угадайку: «10 фактов о себе» (один — неверный)."
+        },
+        {
+          "id": "tr5k0xcs",
+          "text": "Напишите пост в жанре или формате, который никогда ещё не пробовали. Вплоть до 18+ (без фанатизма)."
+        },
+        {
+          "id": "tyac9nba",
+          "text": "Объясните что-то, в чём вы хорошо разбираетесь."
+        },
+        {
+          "id": "t5s0zx9g",
+          "text": "Опубликуйте пошаговую инструкцию на любую тему (шуточное литературное произведение в форме мануала — годится)."
+        },
+        {
+          "id": "tbyxcj7l",
+          "text": "Сгенерируйте видео на основе своего юзерпика."
+        },
+        {
+          "id": "teb8rnn7",
+          "text": "Сгенерируйте новый юзерпик, объяснив нейросети значение своего ника. Поделитесь им в блоге."
+        }
+      ]
+    },
+    {
+      "id": "t8bv40pp",
+      "name": "#САМОУПРАВЛЕНИЕПОСРЕДАМ",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "trlx9g8r",
+          "text": "Ссылки на посты по идеям дня \"самоуправления\""
+        }
+      ]
+    },
+    {
+      "id": "t1des02x",
+      "name": "#пятничныезатеи",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "taj6cjfs",
+          "text": "Ссылки на посты по развлекательным заданиям"
+        }
+      ]
+    },
+    {
+      "id": "tebsr2n9",
+      "name": "#ИНКОГТЯБРЬ",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "tf33ug1g",
+          "text": "Октябрьский движ \"рисуем каждый день\". Посты с рисунками."
+        }
+      ]
+    },
+    {
+      "id": "tevn3sut",
+      "name": "#ИнКОТОбер",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "t3u56rcq",
+          "text": "Пятничный октябрьский изо/нейро/видео/ и прочий рукодельный креатив с котиками"
+        }
+      ]
+    },
+    {
+      "id": "t92musj0",
+      "name": "ВОПРОСЫ от ИИ",
+      "desc": "с хештегом #осенниеразмышления",
+      "tasks": [
+        {
+          "id": "thi7d4kk",
+          "text": "🗺️ **Путешествия и прогулки:** Что есть в вашем городе/местности такого, чего не покажут туристам, но где так приятно побывать осенью?"
+        },
+        {
+          "id": "tfokaxeu",
+          "text": "👽**Напишите инструкцию** для попаданца: «Как выжить в современном городе, не привлекая внимания»."
+        },
+        {
+          "id": "t4n1vlii",
+          "text": "🟦**Фестиваль луж** - покажите чем-либо примечательную лужу. Попробуйте мысленно масштабировать лужу до размеров океана - придумайте названия заливам, морям, островам и мысам на воображаемой карте Лужи."
+        },
+        {
+          "id": "t50k65w9",
+          "text": "‍♂️ **Спорт и физкультура**: «Спортивный прогульщик» - Придумайте максимально нелепую и креативную отмазку, чтобы сегодня не идти на пробежку, в качалку или не делать зарядку.\nВ какой момент тело само решило: «Всё, переходим в осенний режим»? Спать раньше? Хотеть суп? Достать плед? Искать кота?"
+        },
+        {
+          "id": "tto2zifj",
+          "text": "🏠 **Дом** - Если бы квартира могла написать пост о вас, на что бы она пожаловалась этой осенью? А за что похвалила?"
+        },
+        {
+          "id": "trbgdl14",
+          "text": "🧹**и быт* - Расскажите, что для вас важнее в помощнике (живом или железном): чтобы он делал точно по инструкции или чтобы иногда предлагал: «А давай по-другому — так быстрее/удобнее»?"
+        }
+      ]
+    },
+    {
+      "id": "t3zfr4k3",
+      "name": "ИИ предлагает любителям критического мышления:",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "txjcnmir",
+          "text": "🪶Вам разрешили отменить одно правило (грамматическое, административное, любое). Какое? А теперь представьте, что это правило отменили. Что пошло не так?"
+        },
+        {
+          "id": "tintnxi8",
+          "text": "🕔Вам дали машину времени. Вы можете изменить только одну мелочь в прошлом. Какую? К чему это приведёт?"
+        },
+        {
+          "id": "tm48qc79",
+          "text": "🤷🏼«Я никому ничего не должен». Напишите эссе на тему. Или сочинение от лица того, кому он должен."
+        },
+        {
+          "id": "tkd0fl29",
+          "text": "💡Приведите пример вопроса, который сначала кажется дурацким, а потом оказывается самым умным."
+        },
+        {
+          "id": "tl05iwuj",
+          "text": "🤖Вы случайно обнаружили, что ваш начальник — робот. Ваши действия?"
+        },
+        {
+          "id": "t87tnokm",
+          "text": "🥸«Если бы я стал директором департамента (на выбор) на один день, я бы первым делом...» ?"
+        },
+        {
+          "id": "t0cqfs36",
+          "text": "🌩️Драматическое эссе о том, как мелкие неувязки разрастаются до катастрофических масштабов."
+        },
+        {
+          "id": "tdj6ym0b",
+          "text": "🥅Десять тем для сочинений, которые не разочаровали бы вас в школьные годы."
+        }
+      ]
+    },
+    {
+      "id": "taam07rd",
+      "name": "ПРЕДМЕТЫ СЕЗОНА",
+      "desc": "с хештегом #осенниеслова",
+      "tasks": [
+        {
+          "id": "thyezu8x",
+          "text": "Астры"
+        },
+        {
+          "id": "tsp7wbx0",
+          "text": "Барометр"
+        },
+        {
+          "id": "tyo8eruj",
+          "text": "Боржоми"
+        },
+        {
+          "id": "tyb78lcg",
+          "text": "Ветер"
+        },
+        {
+          "id": "t1mmvmkb",
+          "text": "Георгин"
+        },
+        {
+          "id": "tszdact5",
+          "text": "Гербарий"
+        },
+        {
+          "id": "t7vsvbi6",
+          "text": "Дождевик"
+        },
+        {
+          "id": "tmcppps5",
+          "text": "Звонок"
+        },
+        {
+          "id": "t0ff0n5v",
+          "text": "Иней"
+        },
+        {
+          "id": "t669iev2",
+          "text": "Калебас"
+        },
+        {
+          "id": "tl716lw9",
+          "text": "Капюшон"
+        },
+        {
+          "id": "t353q0vi",
+          "text": "Кардиган"
+        },
+        {
+          "id": "td8z0pct",
+          "text": "Кашне"
+        },
+        {
+          "id": "ts046d9p",
+          "text": "Линейка"
+        },
+        {
+          "id": "twrthau1",
+          "text": "Лукошко"
+        },
+        {
+          "id": "tk6umxle",
+          "text": "Мемуары"
+        },
+        {
+          "id": "t0pgp2t1",
+          "text": "Морось"
+        },
+        {
+          "id": "t36rze7k",
+          "text": "Очаг"
+        },
+        {
+          "id": "tey2utrw",
+          "text": "Палантин"
+        },
+        {
+          "id": "tyqksxyk",
+          "text": "Пенал"
+        },
+        {
+          "id": "t3u6jguo",
+          "text": "Пижама"
+        },
+        {
+          "id": "tliy50hu",
+          "text": "Портфель"
+        },
+        {
+          "id": "t6srnevq",
+          "text": "Прогноз"
+        },
+        {
+          "id": "tu8s35ub",
+          "text": "Сапоги"
+        },
+        {
+          "id": "tb7ypwz4",
+          "text": "Свитер"
+        },
+        {
+          "id": "ta0oytmv",
+          "text": "Сериал"
+        },
+        {
+          "id": "ttg9bd6e",
+          "text": "Слякоть"
+        },
+        {
+          "id": "t7uh0b6a",
+          "text": "Сменка"
+        },
+        {
+          "id": "t4gahdv9",
+          "text": "Сухоцвет"
+        },
+        {
+          "id": "t3ca4ugx",
+          "text": "Твид"
+        },
+        {
+          "id": "tk2yk9yo",
+          "text": "Фланель"
+        },
+        {
+          "id": "t3fadfpj",
+          "text": "Флюгер"
+        },
+        {
+          "id": "tp3x1wld",
+          "text": "Фонарь"
+        },
+        {
+          "id": "tysm7ri7",
+          "text": "Фотоальбом"
+        },
+        {
+          "id": "t3c84c7w",
+          "text": "Хризантема"
+        },
+        {
+          "id": "tzhqazek",
+          "text": "Шишка"
+        },
+        {
+          "id": "twvr6n7d",
+          "text": "Экспозиция"
+        },
+        {
+          "id": "th6tliy6",
+          "text": "Ярило"
+        }
+      ]
+    },
+    {
+      "id": "tnnu5kkq",
+      "name": "ИНГРЕДИЕНТЫ СЕЗОНА:",
+      "desc": "c хештегом #осенниепродукты",
+      "tasks": [
+        {
+          "id": "t3yf5juc",
+          "text": "Айсберг (листья)"
+        },
+        {
+          "id": "tiy32bmk",
+          "text": "Арахис"
+        },
+        {
+          "id": "tmmj5tbw",
+          "text": "Боржоми"
+        },
+        {
+          "id": "tlfczvr8",
+          "text": "Бадьян"
+        },
+        {
+          "id": "tz88uu0e",
+          "text": "Брусника"
+        },
+        {
+          "id": "tke5nsle",
+          "text": "Виноградный уксус"
+        },
+        {
+          "id": "tkfy21q3",
+          "text": "Вяленый томат"
+        },
+        {
+          "id": "tcd30389",
+          "text": "Гвоздика"
+        },
+        {
+          "id": "t8mf9kdg",
+          "text": "Гранатовый сироп"
+        },
+        {
+          "id": "tf53deq5",
+          "text": "Засахаренные лепестки розы"
+        },
+        {
+          "id": "ta9pjfch",
+          "text": "Зерна горчицы"
+        },
+        {
+          "id": "t7q4spoo",
+          "text": "Имбирь"
+        },
+        {
+          "id": "tyh3r9d5",
+          "text": "Кабачки (от них не спрятаться!)"
+        },
+        {
+          "id": "t0syzu4p",
+          "text": "Каркаде"
+        },
+        {
+          "id": "tk7nmijj",
+          "text": "Кедровый орех"
+        },
+        {
+          "id": "tz6ok8ta",
+          "text": "Кишмиш"
+        },
+        {
+          "id": "t2dn6jtz",
+          "text": "Кориандр"
+        },
+        {
+          "id": "tlafnfmx",
+          "text": "Кукуруза"
+        },
+        {
+          "id": "ttohmpx5",
+          "text": "Курага"
+        },
+        {
+          "id": "tszso2zq",
+          "text": "Лакрица"
+        },
+        {
+          "id": "tcadnbym",
+          "text": "Лисички"
+        },
+        {
+          "id": "t5vdmudj",
+          "text": "Мак"
+        },
+        {
+          "id": "t7zt7je5",
+          "text": "Овсянка"
+        },
+        {
+          "id": "tp70nujx",
+          "text": "Редька"
+        },
+        {
+          "id": "tsanz9df",
+          "text": "Трюфель"
+        },
+        {
+          "id": "t85pqpll",
+          "text": "Тыквенные семена"
+        },
+        {
+          "id": "tn4m9bwx",
+          "text": "Улун"
+        },
+        {
+          "id": "t2u3klyo",
+          "text": "Урюк,"
+        },
+        {
+          "id": "ts0idyzm",
+          "text": "Финиковый мёд (силан)"
+        },
+        {
+          "id": "tajv0kvx",
+          "text": "Фундук"
+        },
+        {
+          "id": "tj3guf4n",
+          "text": "Халва"
+        },
+        {
+          "id": "tlw66a62",
+          "text": "Хрен"
+        },
+        {
+          "id": "t7zhfvs1",
+          "text": "Хурма"
+        },
+        {
+          "id": "tsetv48s",
+          "text": "Цикорий"
+        },
+        {
+          "id": "tuookhiw",
+          "text": "Шиповник"
+        },
+        {
+          "id": "twp4u3g5",
+          "text": "Ядра каштана"
+        }
+      ]
+    },
+    {
+      "id": "tdvxx0o3",
+      "name": "АВТОРСКИЕ ЗАДАНИЯ от Igor_zim",
+      "desc": "с хештегом #мояосень",
+      "tasks": [
+        {
+          "id": "tcdbqud0",
+          "text": "От лета до зимы. Расскажите, как меняется всё вокруг в течение осени: природа, город, вы сами."
+        },
+        {
+          "id": "t4yvhmk5",
+          "text": "Самый главный праздник в России — Новый год, но до него ещё долго. А что вы отмечаете ещё? Какие праздники, даты? Может быть, у вас день рождения осенью или, как у меня, перед самым её началом?"
+        },
+        {
+          "id": "ta43h5yt",
+          "text": "Осень — время дождей. Любите дождь? Напишите рассказ, эссе или зарисовку, в которой участвует дождь."
+        },
+        {
+          "id": "tyrnzpsw",
+          "text": "Напишите про ваше любимое осеннее место. Куда любите ходить? Почему именно осенью?"
+        },
+        {
+          "id": "tupeuyj7",
+          "text": "Осенний день год кормит. Что собираем в лесах, в полях, на даче?"
+        },
+        {
+          "id": "tioprjjx",
+          "text": "Птицы улетают. Знаете, что такое мурмурация? Видели когда-нибудь? А может быть, удалось заснять журавлиный клин в вышине? А если вы живёте на юге, то к вам осенью птицы прилетают. Расскажите и покажите."
+        },
+        {
+          "id": "twbvfj6u",
+          "text": "Пошуршать листвой. Прогуляйтесь по тротуарам или аллеям парка, покрытым толстым мягким ковром из опавших листьев. Может, даже босиком? Напишите о своих ощущениях!"
+        },
+        {
+          "id": "thlj7krq",
+          "text": "Первый снег. Как вы его встречали? Ловили, как в детстве, пушистые хлопья? Бросались снежками? А может, рискнуть и пройтись по белой дорожке в купальнике, чувствуя невесомые прикосновения снежинок!"
+        }
+      ]
+    },
+    {
+      "id": "t8o18hom",
+      "name": "АВТОРСКИЕ ЗАДАНИЯ от Pryanik",
+      "desc": "с хештегом #осенниекинофильмы",
+      "tasks": [
+        {
+          "id": "tm828spn",
+          "text": "Расскажите про любимых актёров или актрис."
+        },
+        {
+          "id": "t7taejlb",
+          "text": "Расскажите про любимый жанр кино."
+        },
+        {
+          "id": "t1qs5vke",
+          "text": "Расскажите про любимые фильмы или сериалы."
+        },
+        {
+          "id": "tp6t9i8t",
+          "text": "Расскажите про фильмы или сериалы, в которых действие происходит осенью."
+        },
+        {
+          "id": "txmamhq5",
+          "text": "Расскажите про фильмы или сериалы, просмотренные этой осенью."
+        },
+        {
+          "id": "t9in9oiy",
+          "text": "Расскажите про самый необычный фильм или сериал, который вы когда-либо видели."
+        },
+        {
+          "id": "thol02iz",
+          "text": "Если бы вы были сценаристом или режиссёром, каким был бы ваш фильм?"
+        },
+        {
+          "id": "tcqdpvhu",
+          "text": "Если бы вы учредили собственную кинопремию, какие в ней были бы номинации и кто стал бы первыми лауреатами?"
+        },
+        {
+          "id": "tonjslgt",
+          "text": "«Кофе со звездой». Вы случайно встретили известного человека из мира кино и можете задать ему три вопроса. Кто это будет и о чём вы его (или её) спросите?"
+        }
+      ]
+    },
+    {
+      "id": "tm0ocn15",
+      "name": "ВОПРОСЫ по ХЕШМОБАМ",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "t99oh6fg",
+          "text": "**#веловоскресенье:** - Умеете держаться на велосипеде? Помните, как учились? \nЕсть велик? Где вы его храните? Сити-байк или спортивный? \nКогда последний раз катались? Какой самый дальний маршрут случалось проехать? Удобная ли вокруг местность для поездок? \nРазбортовать и заклеить камеру сумеете? Слетевшую цепь поправить? \nКак вам электровеники? Пробовали? Надолго хватает заряда? Велотренажёр vs. реальные покатушки?"
+        },
+        {
+          "id": "tc27jpkt",
+          "text": "**#цветыпопонедельникам** - Любимый цветок? Сами разводите? У вас лёгкая рука — всё растёт и цветёт, что ни посади?\nМного цветов вокруг? Газоны ухоженные? Есть интересные цветочные инсталляции? \nВы за кого, если выбирать между: «Цветы для того и выращивают, чтобы делать букеты; продукты мы едим, цветами любуемся, их срок недолог — и это в порядке вещей» и «Цветам место исключительно на клумбе, а не в вазе!»? \nЕсли нужно на скорую руку изобразить цветочек, что это будет — ромашка, тюльпанчик, розочка? Нарисуйте и раскрасьте )"
+        },
+        {
+          "id": "tzb5obb7",
+          "text": "**#архитектураповторникам** - Что вам больше по душе — старинные особнячки или современный стиль из стекла и стали? Знаете названия архитектурных стилей? Отличите на местности рококо от сталинского ампира?\nПокажите самое необычное здание в округе. Самое ветхое. Самое симпатичное. Самое высокое. Дом с историей. Есть такое, куда хотелось бы заглянуть: а как там внутри?\nПомните свою школу, вуз, садик — как выглядело здание? Типовой проект или что-то особенное?\nПокажите интересную «малую архитектурную форму», мимо которой часто ходите."
+        },
+        {
+          "id": "tpjioiap",
+          "text": "**#природнаясреда** - Далеко или в пешей доступности? Ухоженная, с размеченными дорожками, или первозданный бурелом? Есть у вас любимые местечки на природе, у водоёма? Часто удаётся выбраться?\nНа пляже были этим летом или не очень-то и хотелось?\nЕсть ли любимые природные уголки, о которых вы вспоминаете с грустью — теперь асфальт и бетон на месте полян и родников?\nСамая первая из запомнившихся прогулок на природе? \nЕсли сейчас станете выбирать отдых под открытым небом, где предпочтёте его провести — в лесу, на море, у реки, в горах...?"
+        },
+        {
+          "id": "tv2uo34d",
+          "text": "**#жизненнаясреда** - Антропогенное окружение \nКуда бы вы повели подругу показать  любимые места? А сами там часто гуляете?\nОткуда на ваш город или округу можно посмотреть с высоты?\nСамое выигрышное время или сезон для фото вашего города/местности — в ночной подсветке, в утренней дымке, в снегу, на пике цветения?"
+        },
+        {
+          "id": "tvsbpyjb",
+          "text": "#**танцыпосредам** - Умеете танцевать? Занимаетесь профессионально?\nЗастали парковые танцплощадки с живой музыкой? Или дискотеки с диджеями?\nДавно ли танцевали на вечеринке или корпоративе?\nТанцы на площади (под старинный патефон) — бывает у вас такое?"
+        },
+        {
+          "id": "tmgue13h",
+          "text": "#**птицыпочетвергам** - Сколько птичьих голосов могли бы различить? (Кукушка, воробей, ворона... считаются.)\nСлучалось видеть птичье гнездо живьем, не на фото? Чьё?\nКормите пернатых регулярно, принципиально не кормите или смотря кого и где? С голубями уживаетесь?\nВ опросе «какую птицу выбрать символом города, области, страны» кого бы вы выбрали?\nСамая редкая из птиц, которых вам случалось увидеть или заснять? (В зоопарке тоже годится, если чем-то запомнилась.)"
+        },
+        {
+          "id": "tws8ryyz",
+          "text": "#**рыбныйчетверг** - Рыбу ловите? Хоть разок пробовали удить? Что сложнее — поймать или потом возиться с разделкой? А коптить умеете? Есть свой фирменный подход к засолке?\nЛюбите смотреть на аквариум? Есть свой? Пробовали когда-нибудь завести? Долго продержался?\nАкулу живьём видели? А дельфина гладили?\nЗолотая рыбка права или вы бы на её месте отблагодарили старика более действенно? Или не за что его благодарить-то?"
+        },
+        {
+          "id": "tvxjr322",
+          "text": "#**четвероногийчетверг** - На ком из четвероногих вы катались верхом? (В два года на домашнем пёсике — тоже считаем.)\nГужевой транспорт случалось видеть не на аттракционе? А кого видели в естественной среде? (Не в вольере.) Кто-то, кроме собак, за вами гнался?\nЗа кем приходилось ухаживать?  Терпеть не могу... - есть такие?\n«Если бы не фермы, ... вообще бы уже не осталось, а посевы ради растительного рациона полностью вытеснили бы остатки дикой природы»: — «да» / «нет» / «не знаю»?"
+        },
+        {
+          "id": "tu97uqay",
+          "text": "#**пятничныекотики** - Рыжики или серополосатики? Пушистики или короткошёрстные?Дворовые/уличные есть вокруг? Подкармливают их?\nВидели когда-нибудь кота за работой, соответствующей занимаемой должности?\nХотели бы вы побыть котиком? А если бы стали на сутки (сохраняя память и собственное «я») — куда бы забрались?\nЗнаете, зачем кошки мурчат? Спросите ИИ:)"
+        },
+        {
+          "id": "tz1axg1o",
+          "text": "#**ачётаковапопятницам** - Самый первый запомнившийся анекдот? Много их знаете, любите рассказывать? Умеете развеселить компанию, рассмешить детей?\nНосом в торт, поскользнувшись — в лужу: это смешно? Шутка vs подлянка - в чем разница?\nЛюбимая комедия из детства? Покажите рилс/шорт (короткую видюху) — реально ржачный.\nНарисуйте или сгенерируйте смешную картинку про арбуз.\nКакое слово из новояза или иностранного языка кажется смешным/стрёмным? Смешной топоним припомните? Прикольную вывеску?"
+        },
+        {
+          "id": "t7hr4n7h",
+          "text": "#**субботниепёсики** - У вас была собака? Есть сейчас? На цепи или вместе с семьёй за столом? Сохранились фото, как он был щеночком? Учили питомца трюкам? Запрягали в саночки? \nКакая порода кажется самой причудливой? Забавляют одежки для собачки? Когда-нибудь посещали собачьего парикмахера?\nМогли бы нарисовать грустную мокрую собаку? Попробуйте!"
+        },
+        {
+          "id": "tx7k8yo6",
+          "text": "#**субботнеефотодлядуши** - Сделайте подборку самых душевных кадров минувшего сезона из своего блога или из френдленты."
+        },
+        {
+          "id": "twgeiu5b",
+          "text": "#**люкогеография**  - Вам попадались примечательные крышки люков? Какой рисунок на крышке вы бы выбрали для своего города, района, улицы? Попробуйте сгенерировать его по описанию или нарисовать от руки."
+        },
+        {
+          "id": "tusm0v0o",
+          "text": "#**уличноеискусство**  - Граффити: Искусство или хулиганство? Оживляет индустриальный пейзаж или пачкает стены? Не было ли желания что-нибудь самостоятельно что-нибудь изобразить на стене? Или был такой опыт? Какому фасаду или забору в округе подошла бы «настенная роспись»? Что бы вы там изобразили? Сгенерируйте, загрузив фото забора в нейросеть."
+        },
+        {
+          "id": "t8dam2pr",
+          "text": "#**моиреки / #моря** - Сколько рек и морей довелось повидать? А в скольких — окунуться, ноги замочить? Проплыть на судне? \nСамые выдающиеся из рек — самая крупная из посещённых, самая быстрая, ещё чем-нибудь примечательная: сделайте дайджест по дневниковым записям."
+        },
+        {
+          "id": "t0u5wbcm",
+          "text": "#**уличныекофейни** - У вас принято ставить столики на тротуаре? Погода, общая обстановка позволяют?  Любите так посидеть? Покажите самую антуражную из встреченных или посещённых."
+        },
+        {
+          "id": "tfuh44ye",
+          "text": "#**фонтанывгороде** - У вас в городе есть фонтаны? Действуют или остаются памятниками бесхозяйственности? Какой самый популярный? Самый озорной, если посмотреть под нужным углом? \nДетвора в них плещется? А вам давно приходила мысль искупаться в фонтане? Боролись с искушением или на лету отогнали?"
+        },
+        {
+          "id": "tjvudw4h",
+          "text": "#**часы_на_башне** «Бьют часы на старой башне» или давно уж «показывают правильное время два раза в сутки»? Или никаких часовых башен в округе? В поездках встречались, запомнились, остались фото?"
+        },
+        {
+          "id": "tu4zhwzu",
+          "text": "#**лавочки_скамеечки** - Любимая лавочка, лавочка с историей, необычной конструкции — расскажите, покажите."
+        },
+        {
+          "id": "tw2l1lzh",
+          "text": "#**позабытпозаброшен**  - Разруха и запустение, abandoned... \n«А когда-то!» Что это было, что там происходило? Жаль былого?"
+        },
+        {
+          "id": "tddeq4e7",
+          "text": "#**смотримподноги** - Наблюдаем, подмечаем, считаем — попробуйте так на прогулке и расскажите, что интересного встретилось."
+        },
+        {
+          "id": "tvdu03j8", 
+          "text": "#**расскажитепропокупку** \"Не очень было понятно, зачем, но такое милое, что захотелось взять.\"  \"Почти не пользуюсь, но радует. \"Покажите распаковку — обновки, полезные приспособления по хозяйству, «моя прелесть» :)"
+        },
+        {
+          "id": "t33vkcsg",
+          "text": "#**фоторецепт - кулинария** «У каждой хозяйки свой борщ». Не только борщ — даже глазунью и омлет все готовят по-своему.\n Покажите своё — самое расхожее и обиходное блюдо: как **вы** его делаете."
+        },
+        {
+          "id": "t9voxyvn",
+          "text": "#**покажисвойзавтрак / #покажисвойужин** - Собственноручно приготовленный или от шефа.\n Рассказ или просто фото в стиле \"Завтрак - это красиво!\""
+        },
+        {
+          "id": "t0j1em9b",
+          "text": "#**проверенонасебе** - Советы из личного опыта: Мелочь — а полезно. Не верил — а получилось. Проверил — и выяснил, что..."
+        },
+        {
+          "id": "tgoftfuf",
+          "text": "#**карандашами_и_красками** - Увлекаетесь или последний раз с удовольствием рисовали в детском саду?«Я умею рисовать...» - что? Принцессу? Парусник? Рыцаря? Автомобиль? Микки-Мауса? Герб Андорры? Схему трансформатора? Можете что-то одно такое, но уверенно?"
+        },
+        {
+          "id": "te256xhi",
+          "text": "#**цветформалиния** - Цвет на фото, выразительная форма (круглый дом, спиральный мост и т. п.), выразительная интересная линия."
+        },
+        {
+          "id": "t8x1vc3a",
+          "text": "#**назасыпку** - Задачи, загадки. Удивите френдов интересной задачей.\nПоделитесь любимой детской загадкой.\nПопробуйте придумать загадку для нейросети, которая ей не по зубам."
+        },
+        {
+          "id": "tfqx1ng7",
+          "text": "#**данетки** - Играли? В ЖЖ или вообще? Какая запомнилась?"
+        }
+      ]
+    },
+    {
+      "id": "tc70inoh",
+      "name": "ХЕШМОБЫ. По дням недели:",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "tsltzg8y",
+          "text": "[#цветыпопонедельникам](https://www.livejournal.com/rsearch/?tags=%23%D1%86%D0%B2%D0%B5%D1%82%D1%8B%D0%BF%D0%BE%D0%BF%D0%BE%D0%BD%D0%B5%D0%B4%D0%B5%D0%BB%D1%8C%D0%BD%D0%B8%D0%BA%D0%B0%D0%BC&searchArea=post)"
+        },
+        {
+          "id": "t58gmwgj",
+          "text": "[#архитектураповторникам](https://www.livejournal.com/rsearch/?tags=%23%D0%B0%D1%80%D1%85%D0%B8%D1%82%D0%B5%D0%BA%D1%82%D1%83%D1%80%D0%B0%D0%BF%D0%BE%D0%B2%D1%82%D0%BE%D1%80%D0%BD%D0%B8%D0%BA%D0%B0%D0%BC&searchArea=post)"
+        },
+        {
+          "id": "tsx0cxvo",
+          "text": "[#природнаясреда](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D1%80%D0%B8%D1%80%D0%BE%D0%B4%D0%BD%D0%B0%D1%8F%D1%81%D1%80%D0%B5%D0%B4%D0%B0&searchArea=post)"
+        },
+        {
+          "id": "t0oe5jy3",
+          "text": "[#жизненнаясреда](https://www.livejournal.com/rsearch/?tags=%23%D0%B6%D0%B8%D0%B7%D0%BD%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F%D1%81%D1%80%D0%B5%D0%B4%D0%B0&searchArea=post)\n(урбанистическое окружение)"
+        },
+        {
+          "id": "txi8a0s7",
+          "text": "[#танцыпосредам](https://www.livejournal.com/rsearch/?tags=%23%D1%82%D0%B0%D0%BD%D1%86%D1%8B%D0%BF%D0%BE%D1%81%D1%80%D0%B5%D0%B4%D0%B0%D0%BC&searchArea=post)"
+        },
+        {
+          "id": "tehezlcw",
+          "text": "[#птицыпочетвергам](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D1%82%D0%B8%D1%86%D1%8B%D0%BF%D0%BE%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D0%B3%D0%B0%D0%BC&searchArea=post)"
+        },
+        {
+          "id": "tsyx875c",
+          "text": "[#рыбныйчетверг](https://www.livejournal.com/rsearch/?tags=%23%D1%80%D1%8B%D0%B1%D0%BD%D1%8B%D0%B9%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D0%B3&searchArea=post)"
+        },
+        {
+          "id": "ts4qemox",
+          "text": "[#четвероногийчетверг](https://www.livejournal.com/rsearch/?tags=%23%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D0%BE%D0%BD%D0%BE%D0%B3%D0%B8%D0%B9%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D0%B3&searchArea=post)"
+        },
+        {
+          "id": "twani144",
+          "text": "[#рукодельныйчетверг](https://www.livejournal.com/rsearch/?tags=%23%D1%80%D1%83%D0%BA%D0%BE%D0%B4%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9%D1%87%D0%B5%D1%82%D0%B2%D0%B5%D1%80%D0%B3&journal=fotovivo&journalId=19078119&searchArea=post)"
+        },
+        {
+          "id": "toos3m2d",
+          "text": "[#пятничныекотики](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D1%8F%D1%82%D0%BD%D0%B8%D1%87%D0%BD%D1%8B%D0%B5%D0%BA%D0%BE%D1%82%D0%B8%D0%BA%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "t1osg9o5",
+          "text": "[#ачётаковапопятницам](https://www.livejournal.com/rsearch/?tags=%23%D0%B0%D1%87%D1%91%D1%82%D0%B0%D0%BA%D0%BE%D0%B2%D0%B0%D0%BF%D0%BE%D0%BF%D1%8F%D1%82%D0%BD%D0%B8%D1%86%D0%B0%D0%BC&searchArea=post)"
+        },
+        {
+          "id": "t77l86c3",
+          "text": "[#субботниепёсики](https://www.livejournal.com/rsearch/?tags=%23%D1%81%D1%83%D0%B1%D0%B1%D0%BE%D1%82%D0%BD%D0%B8%D0%B5%D0%BF%D1%91%D1%81%D0%B8%D0%BA%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "t79dnbzh",
+          "text": "[#субботнеефотодлядуши](https://www.livejournal.com/rsearch/?tags=%23%D1%81%D1%83%D0%B1%D0%B1%D0%BE%D1%82%D0%BD%D0%B5%D0%B5%D1%84%D0%BE%D1%82%D0%BE%D0%B4%D0%BB%D1%8F%D0%B4%D1%83%D1%88%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "tma44rak",
+          "text": "[#веловоскресенье](https://www.livejournal.com/rsearch/?tags=%23%D0%B2%D0%B5%D0%BB%D0%BE%D0%B2%D0%BE%D1%81%D0%BA%D1%80%D0%B5%D1%81%D0%B5%D0%BD%D1%8C%D0%B5&searchArea=post)"
+        }
+      ]
+    },
+    {
+      "id": "tuje38v7",
+      "name": "Георгафические (с привязкой к городам и странам):",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "tmmol1ct",
+          "text": "[#люкогеография](https://www.livejournal.com/rsearch/?tags=%23%D0%BB%D1%8E%D0%BA%D0%BE%D0%B3%D0%B5%D0%BE%D0%B3%D1%80%D0%B0%D1%84%D0%B8%D1%8F&searchArea=post)(люки на улицах)"
+        },
+        {
+          "id": "tuy58o0p",
+          "text": "[#уличноеискусство](https://www.livejournal.com/rsearch/?tags=%23%D1%83%D0%BB%D0%B8%D1%87%D0%BD%D0%BE%D0%B5%D0%B8%D1%81%D0%BA%D1%83%D1%81%D1%81%D1%82%D0%B2%D0%BE&searchArea=post) (граффити+)"
+        },
+        {
+          "id": "t7ez0c5u",
+          "text": "[#моиреки](https://www.livejournal.com/rsearch/?tags=%23%D0%BC%D0%BE%D0%B8%D1%80%D0%B5%D0%BA%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "try69xax",
+          "text": "[#моиморя](https://www.livejournal.com/rsearch/?tags=%23%D0%BC%D0%BE%D0%B8%D0%BC%D0%BE%D1%80%D1%8F&searchArea=post)"
+        },
+        {
+          "id": "t1o48gk4",
+          "text": "[#поездаистанции](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D0%BE%D0%B5%D0%B7%D0%B4%D0%B0%D0%B8%D1%81%D1%82%D0%B0%D0%BD%D1%86%D0%B8%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "tjsyjmde",
+          "text": "[#уличныекофейни](https://www.livejournal.com/rsearch/?tags=%23%D1%83%D0%BB%D0%B8%D1%87%D0%BD%D1%8B%D0%B5%D0%BA%D0%BE%D1%84%D0%B5%D0%B9%D0%BD%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "tfb96v7b",
+          "text": "[#фонтанывгороде](https://www.livejournal.com/rsearch/?tags=%23%D1%84%D0%BE%D0%BD%D1%82%D0%B0%D0%BD%D1%8B%D0%B2%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B5&searchArea=post)"
+        },
+        {
+          "id": "tj8o3lwb",
+          "text": "[#часы_на_башне](https://www.livejournal.com/rsearch/?tags=%23%D1%87%D0%B0%D1%81%D1%8B_%D0%BD%D0%B0_%D0%B1%D0%B0%D1%88%D0%BD%D0%B5&searchArea=post)"
+        },
+        {
+          "id": "tn1qf6br",
+          "text": "[#окошки_ставенки](https://www.livejournal.com/rsearch/?tags=%23%D0%BE%D0%BA%D0%BE%D1%88%D0%BA%D0%B8_%D1%81%D1%82%D0%B0%D0%B2%D0%B5%D0%BD%D0%BA%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "t9737tkj",
+          "text": "[#лавочки_скамеечки](https://www.livejournal.com/rsearch/?tags=%23%D0%BB%D0%B0%D0%B2%D0%BE%D1%87%D0%BA%D0%B8_%D1%81%D0%BA%D0%B0%D0%BC%D0%B5%D0%B5%D1%87%D0%BA%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "tgbeom08",
+          "text": "[#позабытпозаброшен](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D0%BE%D0%B7%D0%B0%D0%B1%D1%8B%D1%82%D0%BF%D0%BE%D0%B7%D0%B0%D0%B1%D1%80%D0%BE%D1%88%D0%B5%D0%BD&searchArea=post) (\"abandoned\")"
+        },
+        {
+          "id": "tzxya0u5",
+          "text": "[#городаивеси](https://www.livejournal.com/rsearch/?tags=%23%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B0%D0%B8%D0%B2%D0%B5%D1%81%D0%B8&searchArea=post) (играем вариативно)"
+        },
+        {
+          "id": "tne9747l",
+          "text": "[#городаипесни](https://www.livejournal.com/rsearch/?tags=%23%D0%B3%D0%BE%D1%80%D0%BE%D0%B4%D0%B0%D0%B8%D0%BF%D0%B5%D1%81%D0%BD%D0%B8&searchArea=post) \n(гимны, песни о городах)"
+        },
+        {
+          "id": "tadbbeyx",
+          "text": "[#я❤️этотгород](https://www.livejournal.com/rsearch/?tags=%23%D1%8F%E2%9D%A4%EF%B8%8F%D1%8D%D1%82%D0%BE%D1%82%D0%B3%D0%BE%D1%80%D0%BE%D0%B4&searchArea=post)(Конструкции c я❤️N-ck)"
+        }
+      ]
+    },
+    {
+      "id": "tr2u1la0",
+      "name": "По жанрам:",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "tb5l01ql",
+          "text": "[#фотодня](https://www.livejournal.com/rsearch/?tags=%23%D1%84%D0%BE%D1%82%D0%BE%D0%B4%D0%BD%D1%8F&searchArea=post)"
+        },
+        {
+          "id": "tt836d8r",
+          "text": "[#карандашами_и_красками,](https://www.livejournal.com/rsearch/?tags=%23%D0%BA%D0%B0%D1%80%D0%B0%D0%BD%D0%B4%D0%B0%D1%88%D0%B0%D0%BC%D0%B8_%D0%B8_%D0%BA%D1%80%D0%B0%D1%81%D0%BA%D0%B0%D0%BC%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "twzsxybr",
+          "text": "[#цветформалиния](https://www.livejournal.com/rsearch/?tags=%23%D1%86%D0%B2%D0%B5%D1%82%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D0%BB%D0%B8%D0%BD%D0%B8%D1%8F&searchArea=post)"
+        },
+        {
+          "id": "tlwkgj1g",
+          "text": "[#начтопохожиоблака](https://www.livejournal.com/rsearch/?tags=%23%D0%BD%D0%B0%D1%87%D1%82%D0%BE%D0%BF%D0%BE%D1%85%D0%BE%D0%B6%D0%B8%D0%BE%D0%B1%D0%BB%D0%B0%D0%BA%D0%B0&searchArea=post)"
+        },
+        {
+          "id": "tcl2w4y8",
+          "text": "[#стихи_для_друга](https://www.livejournal.com/rsearch/?tags=%23%D1%81%D1%82%D0%B8%D1%85%D0%B8_%D0%B4%D0%BB%D1%8F_%D0%B4%D1%80%D1%83%D0%B3%D0%B0&searchArea=post) (эстафета)"
+        },
+        {
+          "id": "t5b88wku",
+          "text": "[#назасыпку](https://www.livejournal.com/rsearch/?tags=%23%D0%BD%D0%B0%D0%B7%D0%B0%D1%81%D1%8B%D0%BF%D0%BA%D1%83&searchArea=post) (задачи; загадки)"
+        },
+        {
+          "id": "tlbo0tyd",
+          "text": "[#данетки](https://www.livejournal.com/rsearch/?tags=%23%D0%B4%D0%B0%D0%BD%D0%B5%D1%82%D0%BA%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "tspy145t",
+          "text": "[#прошколу](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D1%80%D0%BE%D1%88%D0%BA%D0%BE%D0%BB%D1%83&searchArea=post)"
+        },
+        {
+          "id": "tohatvp3",
+          "text": "[#нейрографика](https://www.livejournal.com/rsearch/?tags=%23%D0%BD%D0%B5%D0%B9%D1%80%D0%BE%D0%B3%D1%80%D0%B0%D1%84%D0%B8%D0%BA%D0%B0&searchArea=post)"
+        },
+        {
+          "id": "twxcchlf",
+          "text": "[#нейропрактика](https://www.livejournal.com/rsearch/?tags=%23%D0%BD%D0%B5%D0%B9%D1%80%D0%BE%D0%BF%D1%80%D0%B0%D0%BA%D1%82%D0%B8%D0%BA%D0%B0&journal=fotovivo&journalId=19078119&searchArea=post) (проекты, вопросы к ИИ)"
+        },
+        {
+          "id": "trtdknuw",
+          "text": "[#спросиИИ](https://www.livejournal.com/rsearch/?tags=%23%D1%81%D0%BF%D1%80%D0%BE%D1%81%D0%B8%D0%98%D0%98&searchArea=post)"
+        },
+        {
+          "id": "t3310nkf",
+          "text": "[#смотримподноги](https://www.livejournal.com/rsearch/?tags=%23%D1%81%D0%BC%D0%BE%D1%82%D1%80%D0%B8%D0%BC%D0%BF%D0%BE%D0%B4%D0%BD%D0%BE%D0%B3%D0%B8&searchArea=post)"
+        },
+        {
+          "id": "tydyf2fj",
+          "text": "[#фоторецепт](https://www.livejournal.com/rsearch/?tags=%23%D1%84%D0%BE%D1%82%D0%BE%D1%80%D0%B5%D1%86%D0%B5%D0%BF%D1%82&searchArea=post) (пошаговый)"
+        },
+        {
+          "id": "tohwinwd",
+          "text": "[#покажисвойзавтрак](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D0%BE%D0%BA%D0%B0%D0%B6%D0%B8%D1%81%D0%B2%D0%BE%D0%B9%D0%B7%D0%B0%D0%B2%D1%82%D1%80%D0%B0%D0%BA&searchArea=post), [#покажисвойужин](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D0%BE%D0%BA%D0%B0%D0%B6%D0%B8%D1%81%D0%B2%D0%BE%D0%B9%D1%83%D0%B6%D0%B8%D0%BD&searchArea=post)(лытдыбр, фото блюда)"
+        },
+		 {
+          "id": "tsgby0gy",
+          "text": "[#моячашкакружка](https://www.livejournal.com/rsearch/?tags=%23%D0%BC%D0%BE%D1%8F%D1%87%D0%B0%D1%88%D0%BA%D0%B0%D0%BA%D1%80%D1%83%D0%B6%D0%BA%D0%B0&searchArea=post)\n(любимая; привычная; памятная)"
+        },
+        {
+          "id": "teqj29rk",
+          "text": "[#расскажитепропокупку](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D1%80%D0%BE%D0%BF%D0%BE%D0%BA%D1%83%D0%BF%D0%BA%D1%83&searchArea=post)"
+        },
+        {
+          "id": "torr3dvg",
+          "text": "[#трихорошихсобытия](https://www.livejournal.com/rsearch/?tags=%23%D1%82%D1%80%D0%B8%D1%85%D0%BE%D1%80%D0%BE%D1%88%D0%B8%D1%85%D1%81%D0%BE%D0%B1%D1%8B%D1%82%D0%B8%D1%8F&searchArea=post)"
+        },
+        {
+          "id": "t8x18thl",
+          "text": "[#проверенонасебе](https://www.livejournal.com/rsearch/?tags=%23%D0%BF%D1%80%D0%BE%D0%B2%D0%B5%D1%80%D0%B5%D0%BD%D0%BE%D0%BD%D0%B0%D1%81%D0%B5%D0%B1%D0%B5&searchArea=post) \n(советы из личного опыта)"
+        },
+        {
+          "id": "t4sihmej",
+          "text": "[#мойтоп](https://www.livejournal.com/rsearch/?tags=%D0%BC%D0%BE%D0%B9%D1%82%D0%BE%D0%BF&searchArea=post) \n(то, что называлось \"в мемориз\")"
+        },
+        {
+          "id": "tnbjhzc3",
+          "text": "[#яскучаюпо](https://www.livejournal.com/rsearch/?tags=%23%D1%8F%D1%81%D0%BA%D1%83%D1%87%D0%B0%D1%8E%D0%BF%D0%BE&searchArea=post) \n(кому-либо, чему-либо)"
+        },
+        {
+          "id": "tsgby0gy",
+          "text": "[#чётаржу!](https://www.livejournal.com/rsearch/?tags=%23%D1%87%D1%91%D1%82%D0%B0%D1%80%D0%B6%D1%83!&searchArea=post))"
+        },
+        {
+          "id": "t8wtp4y6",
+          "text": "[#хешмоб](https://www.livejournal.com/rsearch/?tags=%23%D1%85%D0%B5%D1%88%D0%BC%D0%BE%D0%B1&searchArea=post) \n (о хешмобоах; предложение новых)"
+        }
+      ]
+    },
+    {
+      "id": "t549xr2b",
+      "name": "ЗАДАНИЯ НА СЧЁТ! ПОЙМАЙ 10 ИЗ 10!",
+      "desc": "Сделай 10 фотографий на предложенные темы и собери их в одном посте! \n\n**🏫СЕНТЯБРЬ, очей очарованье, школа и урожай**",
+      "tasks": [
+        {
+          "id": "ti7miys1",
+          "text": "**#10школьных** сюжетов под девизом «Снова в школу» или «Первый звонок»"
+        },
+        {
+          "id": "tep9od1o",
+          "text": "**#10бабье-летних**  мгновений ускользающего «Бабьего лета»"
+        },
+        {
+          "id": "tzwlqwpg",
+          "text": "**#10урожайных**  кадров на тему «Сохраняем урожай» или «Назвался груздем…»"
+        },
+        {
+          "id": "t0k0qpq8",
+          "text": "**#10увеселений**  впечатлений из серии «Ярмарочное увеселение или Праздничное гуляние»"
+        },
+        {
+          "id": "tmjnzop2",
+          "text": "**#10рябиновых**  «Алых кистей рябин» (куда ж без них =)"
+        },
+        {
+          "id": "tuzpq8l3",
+          "text": "**#10осеннихнатюрмортов** натюрмортов из осенних листьев и природных материалов"
+        },
+        {
+          "id": "tzhluydu",
+          "text": "**#10рыжих**  оттенков рыжего среди вещей, объектов или существ"
+        },
+        {
+          "id": "t78bg8mx",
+          "text": "**#10экскурсионных** путевых заметок из серии «Экскурсионный автобус»"
+        },
+        {
+          "id": "tf5l3z35",
+          "text": "**#10игровых**  моментов осеннего куража: игра с кучей опавших листьев, фотострим под дождем и т.п."
+        },
+        {
+          "id": "tljakogq",
+          "text": "**#10развлекательных**  идей осенних развлечений и прогулок"
+        }
+      ]
+    },
+    {
+      "id": "tk3tbjnq",
+      "name": "🍁ОКТЯБРЬ: Багрец, туманы и мистика",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "trl5r7ve",
+          "text": "**#10пейзажей**  в стиле «В багрец и в золото одетые…»"
+        },
+        {
+          "id": "tzgedn65",
+          "text": "**#10шорохов**  опавших листьев под ногами (опишите ощущения)"
+        },
+        {
+          "id": "tqxa36ym",
+          "text": "**#10туманных**  загадочных кадров в осеннем тумане"
+        },
+        {
+          "id": "t8gmmp9q",
+          "text": "**#10дождливых**  историй, когда «разверзлись хляби небесные»"
+        },
+        {
+          "id": "t3xl03va",
+          "text": "**#10грозовых**  картин драматического грозового неба"
+        },
+        {
+          "id": "t1bmozfe",
+          "text": "**#10мистических**  мистических тайн: от тыкв-светильников до готических теней"
+        },
+        {
+          "id": "t602r92i",
+          "text": "**#10кофейных**  этюдов в стиле «Уютное кафе»"
+        },
+        {
+          "id": "tb8lnd4j",
+          "text": "**#10стильных**  примечательных персонажей в стильных осенних нарядах"
+        },
+        {
+          "id": "t8omlfmz",
+          "text": "**#10курьёзов** и забавных осенних ситуаций"
+        },
+        {
+          "id": "tq9hsetu",
+          "text": "**#10подзонтом** эффектные кадры с зонтиком"
+        }
+      ]
+    },
+    {
+      "id": "ts0az053",
+      "name": "❄️ НОЯБРЬ: Градусник, увядание и предчувствие зимы",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "trlto7ti",
+          "text": "**#10увядающих**  портреты увядающих цветов в опавшем саду"
+        },
+        {
+          "id": "tt6oxxzm",
+          "text": "**#10заморозков** набросков на тему «Первые заморозки» - заиндивелые ветки, схваченные тонким льдом лужицы"
+        },
+        {
+          "id": "tu2vbr8u",
+          "text": "**#10ночныхогней** кадров со светящимися в сумерках окнами, фонарями, с ночной подсветкой"
+        },
+        {
+          "id": "tqdi2b6y",
+          "text": "**#10кадровзаморем**  Где-то осень и не осень вовсе. Поделитесь \"антиосенью\"!"
+        },
+        {
+          "id": "tdz4x93z",
+          "text": "**#10театральных** историй: «Театр уж полон, ложи блещут»"
+        },
+        {
+          "id": "to0ih22a",
+          "text": "**#10гастрономических**  осенних радостей: от тыквенного латте до плотного ужина с копченой грудинкой"
+        },
+        {
+          "id": "taoi0xax",
+          "text": "**#10ярких**  неожиданных ярких деталей поздней осени"
+        },
+        {
+          "id": "t9cq6ksx",
+          "text": "**#10домашних**  зарисовок «Градусник, пижама, удалёнка»"
+        },
+        {
+          "id": "tjpc6o2c",
+          "text": "**#10осеннихмелодий** из личного плейлиста"
+        },
+        {
+          "id": "tenzyo37",
+          "text": "**#10впечатлений** из серии «тёплые вещи / дождь за окном/ горячий шоколад/ теплый кот», «первый снег, зима близко»,"
+        }
+      ]
+    },
+    {
+      "id": "txjr2opl",
+      "name": "ЧЕЛЛЕНДЖИ",
+      "desc": "Напишите пост с «обещанием самому себе» на осень: сколько шагов и в каком направлении собираетесь сделать (выучить, посетить, прочитать, написать и т. д.). \nЗаписи с тегом \"#10...\" будут отметками об этих шагах в вашем блоге. \nКаждый челлендж «на 10» можно выполнить сколько угодно раз за осень — клеточек хватит.",
+      "tasks": [
+        {
+          "id": "tvpkiq8e",
+          "text": "[#10днейпроекта](https://www.livejournal.com/rsearch/?tags=%2310%D0%B4%D0%BD%D0%B5%D0%B9%D0%BF%D1%80%D0%BE%D0%B5%D0%BA%D1%82%D0%B0&searchArea=post)— вы сами решаете, о чём будете писать каждый день. **Первым постом вы должны описать проект!**"
+        },
+        {
+          "id": "tah64z5g",
+          "text": "[#10лытдыбров](https://www.livejournal.com/rsearch/?tags=%2310%D0%BB%D1%8B%D1%82%D0%B4%D1%8B%D0%B1%D1%80%D0%BE%D0%B2&searchArea=post) — классика ЖЖ: истории о том, как проходит день."
+        },
+        {
+          "id": "tq9v9dmh",
+          "text": "[#10маленькихшагов](https://www.livejournal.com/rsearch/?tags=%2310%D0%BC%D0%B0%D0%BB%D0%B5%D0%BD%D1%8C%D0%BA%D0%B8%D1%85%D1%88%D0%B0%D0%B3%D0%BE%D0%B2&searchArea=post)  — к поставленной цели."
+        },
+        {
+          "id": "tlb1ro1p",
+          "text": "[#10учебныхдней](https://www.livejournal.com/rsearch/?tags=%2310%D1%83%D1%87%D0%B5%D0%B1%D0%BD%D1%8B%D1%85%D0%B4%D0%BD%D0%B5%D0%B9&searchArea=post)  — челлендж для тех, кто чему-то учится."
+        },
+        {
+          "id": "tqdjzok5",
+          "text": "[#10хорошихдней](https://www.livejournal.com/rsearch/?tags=%2310%D1%85%D0%BE%D1%80%D0%BE%D1%88%D0%B8%D1%85%D0%B4%D0%BD%D0%B5%D0%B9&searchArea=post)  — каждый день пишем о том, чем этот день был хорош."
+        },
+        {
+          "id": "te0j1hy1",
+          "text": "[#10цитат](https://www.livejournal.com/rsearch/?tags=%2310%D1%86%D0%B8%D1%82%D0%B0%D1%82&searchArea=post)  — делимся интересными цитатами из книг, фильмов, блогов."
+        },
+        {
+          "id": "t410b2gw",
+          "text": "[#10открыток](https://www.livejournal.com/rsearch/?tags=%2310%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%BE%D0%BA&searchArea=post) почтовых, коллекционных, художественных открыток с историями."
+        },
+        {
+          "id": "tuq4f2n7",
+          "text": "[#10невыдуманных](https://www.livejournal.com/rsearch/?tags=%2310%D0%BD%D0%B5%D0%B2%D1%8B%D0%B4%D1%83%D0%BC%D0%B0%D0%BD%D0%BD%D1%8B%D1%85&searchArea=post)  — историй из жизни."
+        },
+        {
+          "id": "t7ffcjjp",
+          "text": "[#10рассказов](https://www.livejournal.com/rsearch/?tags=%2310%D1%80%D0%B0%D1%81%D1%81%D0%BA%D0%B0%D0%B7%D0%BE%D0%B2&searchArea=post)  — ваша художественная проза."
+        },
+        {
+          "id": "topdqiam",
+          "text": "[#10книг](https://www.livejournal.com/rsearch/?tags=%2310%D0%BA%D0%BD%D0%B8%D0%B3&searchArea=post) — рецензии, рассказы о прочитанном и написанном."
+        },
+        {
+          "id": "tnliu5g9",
+          "text": "[#10фильмов](https://www.livejournal.com/rsearch/?tags=%2310%D1%84%D0%B8%D0%BB%D1%8C%D0%BC%D0%BE%D0%B2&searchArea=post)  — аналогично вышесказанному."
+        },
+        {
+          "id": "t3qxw63q",
+          "text": "[#10шоу](https://www.livejournal.com/rsearch/?tags=%2310%D1%88%D0%BE%D1%83&searchArea=post) — о теле- или сетевых каналах, передачах, шоу, которые вы смотрите."
+        },
+        {
+          "id": "t7oowbuc",
+          "text": "[#10фактов](https://www.livejournal.com/rsearch/?tags=%2310%D1%84%D0%B0%D0%BA%D1%82%D0%BE%D0%B2&searchArea=post)  — об интересных фактах."
+        },
+        {
+          "id": "ti1qy84v",
+          "text": "[#10полезныхпостов](https://www.livejournal.com/rsearch/?tags=%2310%D0%BF%D0%BE%D0%BB%D0%B5%D0%B7%D0%BD%D1%8B%D1%85%D0%BF%D0%BE%D1%81%D1%82%D0%BE%D0%B2&searchArea=post)  — поделитесь полезными знаниями, умениями, навыками."
+        },
+        {
+          "id": "tvpe9cyo",
+          "text": "[#10точекнакарте](https://www.livejournal.com/rsearch/?tags=%2310%D1%82%D0%BE%D1%87%D0%B5%D0%BA%D0%BD%D0%B0%D0%BA%D0%B0%D1%80%D1%82%D0%B5&searchArea=post)  — о местах, в которых вы побывали или куда мечтаете попасть."
+        },
+        {
+          "id": "t0hzyijg",
+          "text": "[#10неупущенных](https://www.livejournal.com/rsearch/?tags=%2310%D0%BD%D0%B5%D1%83%D0%BF%D1%83%D1%89%D0%B5%D0%BD%D0%BD%D1%8B%D1%85&searchArea=post)  — о том, о чём вы не рассказали в своё время и хотите восполнить."
+        },
+        {
+          "id": "tvyhq8ew",
+          "text": "[#10спасибо](https://www.livejournal.com/rsearch/?tags=%2310%D1%81%D0%BF%D0%B0%D1%81%D0%B8%D0%B1%D0%BE&searchArea=post)  — с благодарностью кому-то или чему-то."
+        },
+        {
+          "id": "tnf09289",
+          "text": "[#10результатов](https://www.livejournal.com/rsearch/?tags=%2310%D1%80%D0%B5%D0%B7%D1%83%D0%BB%D1%8C%D1%82%D0%B0%D1%82%D0%BE%D0%B2&searchArea=post)  — о результатах вашего труда или хобби."
+        },
+        {
+          "id": "t41xntib",
+          "text": "[#10DIY](https://www.livejournal.com/rsearch/?tags=%2310DIY&searchArea=post) - о том, что вы сделали своими руками"
+        },
+        {
+          "id": "tdpebm7b",
+          "text": "[#10музеев](https://www.livejournal.com/rsearch/?tags=%2310%D0%BC%D1%83%D0%B7%D0%B5%D0%B5%D0%B2&searchArea=post)  — расскажите, что заинтересовало, так, чтобы френдам было не скучно."
+        },
+        {
+          "id": "trs97j9j",
+          "text": "[#10картин](https://www.livejournal.com/rsearch/?tags=%2310%D0%BA%D0%B0%D1%80%D1%82%D0%B8%D0%BD&searchArea=post)  — истории о картинах художников."
+        },
+        {
+          "id": "tdikbvuf",
+          "text": "[#10проспорт](https://www.livejournal.com/rsearch/?tags=%2310%D0%BF%D1%80%D0%BE%D1%81%D0%BF%D0%BE%D1%80%D1%82&searchArea=post)  — о достижениях: своих или любимой команды."
+        },
+        {
+          "id": "totgz6hg",
+          "text": "[#10путевых](https://www.livejournal.com/rsearch/?tags=%2310%D0%BF%D1%83%D1%82%D0%B5%D0%B2%D1%8B%D1%85&searchArea=post)  — путевые истории, наблюдения, байки."
+        },
+        {
+          "id": "tn0khaab",
+          "text": "[#10мероприятий](https://www.livejournal.com/rsearch/?tags=%2310%D0%BC%D0%B5%D1%80%D0%BE%D0%BF%D1%80%D0%B8%D1%8F%D1%82%D0%B8%D0%B9&searchArea=post)  — о тех, которые вы посетили (оффлайн и онлайн)."
+        },
+        {
+          "id": "tm4ogo4a",
+          "text": "[#10открытий](https://www.livejournal.com/rsearch/?tags=%2310%D0%BE%D1%82%D0%BA%D1%80%D1%8B%D1%82%D0%B8%D0%B9&searchArea=post)  — то, что стало открытием для вас или  об открытиях в науке."
+        },
+        {
+          "id": "tk0mygja",
+          "text": "[#10историйуспеха](https://www.livejournal.com/rsearch/?tags=%2310%D0%B8%D1%81%D1%82%D0%BE%D1%80%D0%B8%D0%B9%D1%83%D1%81%D0%BF%D0%B5%D1%85%D0%B0&searchArea=post)  — пусть даже маленького, вашего или интересного для вас."
+        }
+      ]
+    },
+    {
+      "id": "tm53b8vm",
+      "name": "#НЕСКУЧНЫЕДАТЫ",
+      "desc": "",
+      "tasks": [
+        {
+          "id": "tvj8wpqh",
+          "text": "**КАЛЕНДАРЫЕ ПОСТЫ:**  —  Официальные и неофициальные праздники, памятные даты, юбилеи, чепушные «дни», народные поверья, привязанные к датам. \nГуглите и выбирайте любой «датский» повод."
+        },
+        {
+          "id": "t1cdh2ek",
+          "text": "**Объявите свой:**  —  Корпоративный, в честь открытий, изобретений (день рождения 🍰🤖 робота-пылесоса, например, или шуточный \"День лени\""
+        },
+        {
+          "id": "tvo8tfgj",
+          "text": "**#этотденьвблоге:**  —  Выберите сами (или воспользуйтесь рассылкой ЖЖ) пост, опубликованный ровно год/два/десть лет назад, с которым вы хотите познакомить новых друзей/подписчиков. Вставьте ссылкой-виджетом и напишете предисловие - почему выбрали именно эту запись."
+        },
+        {
+          "id": "tn1wjvit",
+          "text": "**КОНКУРС \"датских\" ОТКРЫТОК:**  —  На протяжении осеннего сезона:. сгенерируйте/нарисуйте (видео-)открытки к празднику или  \"Дню\", опубликуйте с хештегом #нескучныедаты_изо"
+        }
+      ]
+    }
+  ]
+}
+/* ============================================================ */
+
+const STORAGE_KEY = 'ljMarathonState_v1';
+
+function loadState(){
+  let state;
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    state = raw ? JSON.parse(raw) : null;
+  }catch(e){ state = null; }
+  if(!state){
+    state = {
+      title: EMBEDDED_TEMPLATE.title, coverImage: EMBEDDED_TEMPLATE.coverImage || '',
+      quotas: EMBEDDED_TEMPLATE.quotas, categories: EMBEDDED_TEMPLATE.categories,
+      templateVersion: TEMPLATE_VERSION,
+      progress: { quotaTargets:{}, tasks:{}, collapsed:{} }
+    };
+  }
+  if(!state.progress) state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
+  if(!state.progress.collapsed) state.progress.collapsed = {};
+  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}};
+    if(!state.settings) state.settings = {nick:'', statsUrl: DEFAULT_STATS_URL};
+  if(!state.settings.statsUrl) state.settings.statsUrl = DEFAULT_STATS_URL;
+  if(state.templateVersion !== TEMPLATE_VERSION){
+    // подтянули новую версию шаблона; личный прогресс (по id заданий) не трогаем
+    state.title = EMBEDDED_TEMPLATE.title;
+    state.coverImage = EMBEDDED_TEMPLATE.coverImage || '';
+    state.quotas = EMBEDDED_TEMPLATE.quotas;
+    state.categories = EMBEDDED_TEMPLATE.categories;
+    state.templateVersion = TEMPLATE_VERSION;
+  }
+  return state;
+}
+
+let state = loadState();
+
+function findTask(id){
+  for(const cat of state.categories){
+    const task = cat.tasks.find(t=>t.id===id);
+    if(task) return {cat, task};
+  }
+  return null;
+}
+
+const QUEUE_KEY = 'ljMarathonQueue_v1';
+function loadQueue(){ try{ return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; }catch(e){ return []; } }
+function saveQueue(q){ localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
+
+function sendStat(payload){
+  if(!state.settings.statsUrl) return;
+  const item = Object.assign({nick: state.settings.nick || 'аноним', ts: new Date().toISOString()}, payload);
+  const q = loadQueue();
+  q.push(item);
+  saveQueue(q);
+  updateQueueBadge();
+  flushQueue();
+}
+
+let flushing = false;
+async function flushQueue(){
+  if(flushing || !state.settings.statsUrl) return;
+  flushing = true;
+  let q = loadQueue();
+  while(q.length){
+    const item = q[0];
+    try{
+      await fetch(state.settings.statsUrl, {
+        method:'POST', mode:'no-cors',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body: JSON.stringify(item)
+      });
+      q.shift();
+      saveQueue(q);
+    }catch(e){ break; }
+  }
+  flushing = false;
+  updateQueueBadge();
+}
+function updateQueueBadge(){
+  const el = document.getElementById('queueBadge');
+  if(!el) return;
+  const n = loadQueue().length;
+  el.textContent = n ? `⏳ не отправлено: ${n} — дошлётся само, как только будет связь` : '';
+}
+setInterval(flushQueue, 20000);
+window.addEventListener('online', flushQueue);
+
+function isLikelyUrl(s){
+  const v = (s||'').trim();
+  if(!v || /\s/.test(v)) return false;
+  return /^https?:\/\/[^\s]+\.[^\s]+/i.test(v);
+}
+function isDuplicateLink(taskId, idx, val){
+  for(const tid in state.progress.tasks){
+    const ts = state.progress.tasks[tid];
+    if(!ts || !ts.links) continue;
+    for(let i=0;i<ts.links.length;i++){
+      if(tid===taskId && i===idx) continue;
+      if(ts.links[i].trim() === val) return true;
+    }
+  }
+  return false;
+}
+function isPlausibleAppsScriptUrl(url){
+  return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test((url||'').trim());
+}
+
+async function testStatsUrl(){
+  const url = state.settings.statsUrl;
+  const statusEl = document.getElementById('urlCheckStatus');
+  if(!isPlausibleAppsScriptUrl(url)){
+    statusEl.textContent = '✗ непохоже на ссылку Apps Script (нужна вида .../macros/s/.../exec)';
+    statusEl.style.color = 'var(--coral)';
+    return;
+  }
+  statusEl.textContent = 'проверяю…';
+  statusEl.style.color = '';
+  try{
+    const res = await fetch(url + (url.includes('?')?'&':'?') + 'ping=1');
+    const data = await res.json();
+    if(data && data.ok && data.app === 'lj-marathon-stats'){
+      statusEl.textContent = '✓ это наш скрипт, отвечает как надо';
+      statusEl.style.color = 'var(--forest)';
+    } else {
+      statusEl.textContent = '✗ отвечает, но не похоже на наш скрипт — проверь URL';
+      statusEl.style.color = 'var(--coral)';
+    }
+  }catch(e){
+    statusEl.textContent = '✗ не отвечает — проверь URL и что доступ у деплоя "Все"';
+    statusEl.style.color = 'var(--coral)';
+  }
+}
+
+async function loadStats(){
+  const listEl = document.getElementById('statsList');
+  if(!state.settings.statsUrl){ listEl.textContent = 'сначала укажите URL приёмника'; return; }
+  listEl.textContent = 'загрузка…';
+  try{
+    const res = await fetch(state.settings.statsUrl);
+    const data = await res.json();
+    if(!data.length){ listEl.textContent = 'пока пусто'; return; }
+
+    // группировка по категориям: берём category из ответа, если есть,
+    // иначе ищем категорию по taskId в текущем шаблоне
+    const byCat = {};
+    data.forEach(d=>{
+      let catName = d.category;
+      if(!catName && d.taskId){
+        const found = findTask(d.taskId);
+        if(found) catName = found.cat.name;
+      }
+      if(!catName) catName = 'без категории';
+      byCat[catName] = (byCat[catName]||0) + (Number(d.count)||0);
+    });
+    const plannedByCat = {};
+    state.categories.forEach(c=>{ plannedByCat[c.name] = c.tasks.length; });
+
+    const catRows = Object.keys(byCat).map(name=>{
+      const planned = plannedByCat[name];
+      const plannedTxt = planned!=null ? ` из ${planned} намеченных` : '';
+      return `<div>${escHtml(name)}: <b class="mono">${byCat[name]}</b> постов${plannedTxt}</div>`;
+    }).join('');
+
+    const detailRows = data.slice(0,15).map((d,i)=>`<div class="hint">${i+1}. ${escHtml(d.task)} — <b class="mono">${d.count}</b></div>`).join('');
+
+    listEl.innerHTML = `<div style="margin-bottom:8px;">${catRows || '<span class="hint">нет данных по категориям</span>'}</div><div>${detailRows}</div>`;
+  }catch(e){
+    listEl.textContent = 'не удалось загрузить (проверьте URL и что Apps Script передеплоен)';
+  }
+}
+
+function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+function getTaskState(id){
+  if(!state.progress.tasks[id]) state.progress.tasks[id] = {checked:false, links:[''], sentSlots:[], marks:{liked:false}};
+  const t = state.progress.tasks[id];
+  if(!t.sentSlots) t.sentSlots = [];
+  if(!t.marks) t.marks = {liked:false};
+  return t;
+}
+
+function countDoneForQuota(){
+  return Object.values(state.progress.tasks).filter(t=>t.checked).length;
+}
+
+function renderProgress(){
+  const total = state.categories.reduce((s,c)=>s+c.tasks.length,0);
+  const done = countDoneForQuota();
+  const pct = total ? Math.round(done/total*100) : 0;
+  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
+  document.getElementById('progressBarFill').style.width = pct+'%';
+  document.getElementById('progressPct').textContent = pct+'%';
+}
+
+function renderMarathon(){
+  
+  const active = document.activeElement;
+  let restoreSelector = null, selStart = null, selEnd = null;
+  const catViewEl = document.getElementById('categoriesView');
+  if(active && catViewEl && catViewEl.contains(active) && active.dataset){
+    const key = Object.keys(active.dataset)[0];
+    if(key){ restoreSelector = `[data-${key}="${CSS.escape(active.dataset[key])}"]`; }
+    if(typeof active.selectionStart === 'number'){ selStart = active.selectionStart; selEnd = active.selectionEnd; }
+  }
+  const scrollY = window.scrollY;
+
+  document.getElementById('marathonTitle').textContent = '🦊 ' + (state.title || 'Марафон ЖЖ');
+  document.getElementById('nickInput').value = state.settings.nick || '';
+  document.getElementById('statsUrlInput').value = state.settings.statsUrl || '';
+  document.getElementById('statsCard').style.display = state.settings.statsUrl ? 'block' : 'none';
+  updateQueueBadge();
+  renderCover();
+
+  const qEl = document.getElementById('quotasList');
+  qEl.innerHTML = state.quotas.map(q=>{
+    const target = state.progress.quotaTargets[q.id] ?? '';
+    return `<div class="quota">
+      <div class="label">${escHtml(q.label)}</div>
+      <div class="set">
+        <input type="number" min="0" placeholder="N" value="${target}" data-quota="${q.id}">
+        <span class="hint">${escHtml(q.unit)}</span>
+      </div>
+    </div>`;
+  }).join('') || '<div class="empty">квоты не заданы</div>';
+
+  const cEl = document.getElementById('categoriesView');
+  cEl.innerHTML = state.categories.map(cat=>{
+    const collapsed = !!state.progress.collapsed[cat.id];
+    return `
+    <div class="card ${collapsed?'collapsed':''}">
+      <div class="cat-header">
+        <div class="row" style="gap:6px;">
+          <button class="cat-toggle" data-toggle="${cat.id}">${collapsed?'▸':'▾'}</button>
+          <h3>${escHtml(cat.name)}</h3>
+        </div>
+        <span class="hint mono">${cat.tasks.filter(t=>getTaskState(t.id).checked).length} / ${cat.tasks.length}</span>
+      </div>
+      <div class="cat-body">
+        ${cat.desc && cat.desc.trim() ? `<div class="cat-desc">${formatTaskText(cat.desc)}</div>` : ''}
+        <div class="task-grid">
+          ${cat.tasks.map((t,idx)=>{
+  const ts = getTaskState(t.id);
+  return `<div class="task-card ${ts.checked?'done':''}">
+    <div class="task-card-inner">
+      <label>
+        <input type="checkbox" ${ts.checked?'checked':''} data-check="${t.id}">
+        <span><span class="task-num">${idx+1}.</span> ${formatTaskText(t.text)}</span>
+      </label>
+                <div class="task-marks">
+                  <button type="button" class="mark-btn ${ts.marks.liked?'on':''}" data-mark="${t.id}|liked" title="Понравилось">♥</button>
+                </div>
+                ${ts.checked ? `<div class="links">
+                ${ts.links.map((v,i)=>{
+                  const val = v.trim();
+                  const bad = val && !isLikelyUrl(val);
+                  const dup = val && !bad && isDuplicateLink(t.id, i, val);
+                  return `<div class="link-field">
+                    <div class="link-row">
+                      <span class="link-num">${i+1}.</span>
+                      <input type="text" class="${(bad||dup)?'link-bad':''}" placeholder="ссылка на пост" value="${escAttr(v)}" data-link="${t.id}|${i}">
+                    </div>
+                    ${bad ? '<span class="link-warn">⚠ это не похоже на ссылку</span>' : ''}
+                    ${dup ? '<span class="link-warn">⚠ такая ссылка уже есть в чек-листе</span>' : ''}
+                  </div>`;
+                }).join('')}
+                </div>` : ''}
+              </div>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+  }).join('') || '<div class="empty">категории не заданы</div>';
+
+  save();
+  renderProgress();
+
+  if(restoreSelector){
+    const el = document.querySelector(restoreSelector);
+    if(el){
+      el.focus({preventScroll:true});
+      if(selStart!=null && el.setSelectionRange){ try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
+    }
+  }
+  window.scrollTo(0, scrollY);
+}
+
+function renderCover(){
+  const wrap = document.getElementById('coverImageWrap');
+  const img = document.getElementById('coverImageImg');
+  const url = (state.coverImage || '').trim();
+  if(url){
+    img.onerror = ()=>{ wrap.style.display = 'none'; };
+    img.src = url;
+    wrap.style.display = 'block';
+  } else {
+    wrap.style.display = 'none';
+  }
+}
+
+document.getElementById('nickInput').addEventListener('input', e=>{ state.settings.nick = e.target.value; save(); });
+document.getElementById('statsUrlInput').addEventListener('input', e=>{
+  state.settings.statsUrl = e.target.value; save();
+  document.getElementById('statsCard').style.display = state.settings.statsUrl ? 'block' : 'none';
+  document.getElementById('urlCheckStatus').textContent = '';
+});
+document.getElementById('testUrlBtn').addEventListener('click', testStatsUrl);
+document.getElementById('refreshStats').addEventListener('click', loadStats);
+
+document.getElementById('quotasList').addEventListener('input', e=>{
+  if(e.target.dataset.quota){
+    state.progress.quotaTargets[e.target.dataset.quota] = e.target.value;
+    save();
+  }
+});
+
+function celebrate(message, emojis, count){
+  let layer = document.getElementById('celebrateLayer');
+  if(!layer){
+    layer = document.createElement('div');
+    layer.id = 'celebrateLayer';
+    document.body.appendChild(layer);
+  }
+  const msg = document.createElement('div');
+  msg.className = 'celebrate-msg';
+  msg.textContent = message;
+  layer.appendChild(msg);
+  setTimeout(()=>msg.remove(), 2700);
+
+  for(let i=0;i<count;i++){
+    const p = document.createElement('span');
+    p.className = 'celebrate-particle';
+    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
+    p.style.left = Math.random()*100 + 'vw';
+    const duration = 1.6 + Math.random()*1.2;
+    const delay = Math.random()*0.6;
+    p.style.animationDuration = duration+'s';
+    p.style.animationDelay = delay+'s';
+    layer.appendChild(p);
+    setTimeout(()=>p.remove(), (duration+delay+0.3)*1000);
+  }
+}
+
+function checkMilestones(taskId){
+  const found = findTask(taskId);
+  if(!found) return;
+  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}};
+
+  const totalDone = Object.values(state.progress.tasks).filter(t=>t.checked).length;
+  const catDone = found.cat.tasks.filter(t=>getTaskState(t.id).checked).length;
+
+  if(totalDone > 0 && totalDone % 10 === 0 && totalDone > state.progress.milestones.global){
+    state.progress.milestones.global = totalDone;
+    celebrate(`Десять сделано! Уже ${totalDone} 🍬`, ['🍬','🍭','🍫'], 16);
+  }
+  if(catDone > 0 && catDone % 10 === 0 && catDone > (state.progress.milestones.cats[found.cat.id]||0)){
+    state.progress.milestones.cats[found.cat.id] = catDone;
+    celebrate(`«${found.cat.name}» — уже ${catDone}! 🎆`, ['💖','✨','🍩','🍁'], 24);
+  }
+  save();
+}
+
+document.getElementById('categoriesView').addEventListener('change', e=>{
+  if(e.target.dataset.check){
+    const id = e.target.dataset.check;
+    const ts = getTaskState(id);
+    ts.checked = e.target.checked;
+    if(ts.checked && ts.links.length===0) ts.links=[''];
+    save(); renderMarathon();
+    if(ts.checked) checkMilestones(id);
+  }
+});
+document.getElementById('categoriesView').addEventListener('input', e=>{
+  if(e.target.dataset.link){
+    const [id, idxStr] = e.target.dataset.link.split('|');
+    const idx = parseInt(idxStr,10);
+    const ts = getTaskState(id);
+    ts.links[idx] = e.target.value;
+    if(idx === ts.links.length-1 && e.target.value.trim()!==''){
+      ts.links.push('');
+      save(); renderMarathon();
+    } else {
+      save();
+    }
+  }
+});
+document.getElementById('categoriesView').addEventListener('keydown', e=>{
+  if(e.key === 'Enter' && e.target.dataset.link){
+    e.preventDefault();
+    e.target.blur();
+  }
+});
+document.getElementById('categoriesView').addEventListener('focusout', e=>{
+  if(e.target.dataset.link){
+    const [id, idxStr] = e.target.dataset.link.split('|');
+    const idx = parseInt(idxStr,10);
+    const val = e.target.value.trim();
+    const ts = getTaskState(id);
+    if(!val) return;
+    const bad = !isLikelyUrl(val);
+    const dup = !bad && isDuplicateLink(id, idx, val);
+    if(bad || dup){
+      renderMarathon();
+      return; // некорректная или повторная ссылка — в статистику не идёт
+    }
+    if(ts.sentSlots[idx]) return;
+    const found = findTask(id);
+    if(found){
+      sendStat({category: found.cat.name, task: found.task.text, taskId: id, idx});
+      ts.sentSlots[idx] = true;
+      save();
+    }
+  }
+});
+document.getElementById('categoriesView').addEventListener('click', e=>{
+  const toggleBtn = e.target.closest('[data-toggle]');
+  if(toggleBtn){
+    const id = toggleBtn.dataset.toggle;
+    const collapsed = !state.progress.collapsed[id];
+    state.progress.collapsed[id] = collapsed;
+    save();
+    const card = toggleBtn.closest('.card');
+    card.classList.toggle('collapsed', collapsed);
+    toggleBtn.textContent = collapsed ? '▸' : '▾';
+    return;
+  }
+  const markBtn = e.target.closest('[data-mark]');
+  if(markBtn){
+    const [id, key] = markBtn.dataset.mark.split('|');
+    const ts = getTaskState(id);
+    ts.marks[key] = !ts.marks[key];
+    save();
+    markBtn.classList.toggle('on', ts.marks[key]);
+  }
+});
+document.getElementById('collapseAllBtn').addEventListener('click', ()=>{
+  state.categories.forEach(c=>{ state.progress.collapsed[c.id] = true; });
+  save();
+  document.querySelectorAll('#categoriesView .card').forEach(card=>card.classList.add('collapsed'));
+  document.querySelectorAll('#categoriesView .cat-toggle').forEach(b=>b.textContent='▸');
+});
+document.getElementById('expandAllBtn').addEventListener('click', ()=>{
+  state.categories.forEach(c=>{ state.progress.collapsed[c.id] = false; });
+  save();
+  document.querySelectorAll('#categoriesView .card').forEach(card=>card.classList.remove('collapsed'));
+  document.querySelectorAll('#categoriesView .cat-toggle').forEach(b=>b.textContent='▾');
+});
+
+function download(filename, obj){
+  const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+}
+document.getElementById('exportFull').addEventListener('click', ()=>{
+  download('marathon-progress.json', state);
+});
+document.getElementById('importFullBtn').addEventListener('click', ()=>document.getElementById('fileInputFull').click());
+document.getElementById('resetAllBtn').addEventListener('click', ()=>{
+  if(!confirm('Точно стереть весь ваш прогресс — все галочки, ссылки и цели на сезон? Список заданий останется, отменить сброс нельзя.')) return;
+  localStorage.removeItem(QUEUE_KEY);
+  state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
+  save();
+  renderMarathon();
+});
+document.getElementById('fileInputFull').addEventListener('change', e=>{
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ()=>{
+    try{
+      state = JSON.parse(r.result);
+      if(!state.progress) state.progress={quotaTargets:{}, tasks:{}, collapsed:{}};
+      if(!state.progress.collapsed) state.progress.collapsed = {};
+      if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}};
+      if(!state.settings) state.settings={nick:'', statsUrl:''};
+      save(); renderMarathon();
+    }catch(err){ alert('Не удалось прочитать сохраненный файл'); }
+  };
+  r.readAsText(f);
+});
+
+function escHtml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function formatTaskText(s){
+  let out = escHtml(s);
+  out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, text, url)=>{
+    const cls = text.trim().startsWith('#') ? ' class="tag-link"' : '';
+    return `<a href="${url}" target="_blank" rel="noopener noreferrer"${cls}>${text}</a>`;
+  });
+  out = out.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  return out;
+}
+function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
+
+renderMarathon();
+flushQueue();
+</script>
+
+<div class="typo-strip">
+  <form id="typoForm" class="typo-row">
+    <span class="typo-label">Заметили опечатку?</span>
+    <input type="text" id="typoMessage" placeholder="Напишите!" required>
+    <button type="submit" class="ghost">Отправить</button>
+  </form>
+  <div id="typoThanks" class="typo-thanks" hidden>Спасибо! Мы изучим вопрос.</div>
+</div>
+
+<script>
+document.getElementById('typoForm').addEventListener('submit', function(e) {
+  e.preventDefault();
+
+  document.getElementById('typoForm').hidden = true;
+  document.getElementById('typoThanks').hidden = false;
+});
+</script>
+</body>
+</html>
+
