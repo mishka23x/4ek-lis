@@ -185,7 +185,7 @@
    шаблона (например на дату), иначе у участниц не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-08-20';
+const TEMPLATE_VERSION = '2026-08-19';
 const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории, которая считается "челленджами" в сводке статистики
 const CHALLENGE_COMPLETE_THRESHOLD = 10; // сколько ссылок в одном задании считать "полностью выполненным челленджем"
 
@@ -1652,9 +1652,7 @@ function renderLocalStats(){
   });
   statsListEl.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <div>🔗 <b>Всего ссылок в чек-листе:</b> <span class="mono">${totalLinks}</span></div>
-      <div>🎯 <b>Из них в «Челленджах»:</b> <span class="mono">${challengeLinks}</span></div>
-      <div>🏆 <b>Полностью выполненных челленджей</b> (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</span></div>
+      <div><b>Всего выполненно:  <span class="mono">${totalLinks} </b> </span> | <b> Из них в «Челленджах»:  <span class="mono">${challengeLinks} </b> </span> | <b> Полностью выполнено челленджей (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</b></span></div>
     </div>
   `;
 }
