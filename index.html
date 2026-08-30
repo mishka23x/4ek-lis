@@ -122,7 +122,7 @@
    из конструктора (кнопка "⇩ шаблон"). TEMPLATE_VERSION — любая
    строка, меняй при каждом обновлении (например на дату).
    ============================================================ */
-const TEMPLATE_VERSION = '2026-08-29';
+const TEMPLATE_VERSION = '2026-08-30';
 const EMBEDDED_TEMPLATE = {
   "title": "ЧАВО по чек-листу и его функциям",
   "items": [
@@ -195,7 +195,7 @@ listEl.innerHTML = items.map((it, i) => `
   </details>
 `).join('') || '<div class="empty">вопросов пока нет</div>';
 
-const STATS_URL = 'https://script.google.com/macros/s/AKfycbxEyJsVyA0ob6vLd7-6FJq9g9inELM1LRFAHvLHPsmq_6fTbkBKDt1YNpIQIwbWByud/exec';
+const STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
 
 document.getElementById('askSubmit').addEventListener('click', ()=>{
   const nick = document.getElementById('askNick').value.trim();
