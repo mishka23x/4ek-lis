@@ -24,6 +24,7 @@
   .iobar{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
   button.ghost{ border:1px solid var(--line); background:transparent; color:var(--ink-soft); padding:7px 12px; border-radius:8px; font-size:calc(12px * var(--text-scale)); cursor:pointer; font-family:var(--font-body); }
   button.ghost:hover{border-color:var(--forest); color:var(--forest);}
+  button.ghost:disabled{opacity:.5; cursor:default;}
   main{max-width:1300px; margin:0 auto; padding:20px 24px;}
   .card{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:18px; }
   .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
@@ -81,12 +82,9 @@
   .mark-btn.on[data-mark*="|liked"]{ background:#F6D9D2; border-color:var(--coral); color:var(--coral); }
 
   .typo-strip{ max-width:1300px; margin:0 auto 24px; padding:0 24px; }
-  .typo-row{ display:flex; align-items:center; gap:10px; background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:6px 8px 6px 16px; }
+  .typo-row{ display:flex; align-items:center; gap:10px; background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:10px 16px; }
   .typo-row .typo-label{ color:var(--ink-soft); font-size:calc(12px * var(--text-scale)); white-space:nowrap; }
-  .typo-row input[type=text]{ flex:1; min-width:0; border:none; background:transparent; padding:6px 4px; font-size:calc(13px * var(--text-scale)); color:var(--ink); }
-  .typo-row input[type=text]:focus{ outline:none; }
-  .typo-row button{ flex:none; }
-  .typo-thanks{ color:var(--forest); font-size:calc(12px * var(--text-scale)); padding:6px 16px; }
+  .typo-row a.ghost{ text-decoration:none; }
   .task-num{ color:var(--ink-soft); font-weight:700; }
   #celebrateLayer{position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;}
   .celebrate-msg{
@@ -145,30 +143,21 @@
 
 <main>
   <div class="card" id="syncCard">
-    <h3 style="margin-bottom:10px;">Подсчет статистики</h3>
     <div class="row">
       <div>
-        <label class="hint" style="display:block;">Ник (для синхронизации)</label>
-        <input type="text" id="nickInput" style="width:180px;">
-      </div>
-      <div style="display:none;">
-        <label class="hint" style="display:block;">URL приёмника (Google Apps Script)</label>
-        <div class="row" style="gap:6px;">
-          <input type="text" id="statsUrlInput" style="width:300px;" placeholder="https://script.google.com/macros/s/.../exec">
-          <button class="ghost" id="testUrlBtn">проверить</button>
-        </div>
-        <div class="hint" id="urlCheckStatus"></div>
+        <label class="hint" style="display:block;">Имя пользоваталя</label>
+        <input type="text" id="nickInput" style="width:220px;">
       </div>
     </div>
-    <div class="hint" style="margin-top:6px;" id="queueBadge"></div>
-    <div class="hint">Пусто — всё остаётся только у вас локально.</div>
+    <div class="hint" style="margin-top:6px;"></div>
   </div>
-  <div class="card" id="statsCard" style="display:none;">
-    <div class="row" style="justify-content:space-between;">
-      <h3>Статистика марафона</h3>
-      <button class="ghost" id="refreshStats">↻ обновить</button>
+  <div class="card" id="statsCard">
+    <h3 style="margin-bottom:10px;">Статистика</h3>
+    <div id="statsList" class="hint">—</div>
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+      <button class="ghost" id="sendFinalBtn">📤 Отправить итоги (в конце сезона)</button>
+      <div class="hint" id="finalSendStatus" style="margin-top:6px;"></div>
     </div>
-    <div id="statsList" class="hint">пока не запрашивали</div>
   </div>
   <div class="card">
     <h3 style="margin-bottom:10px;">Планы на сезон 10 | 30 | 60 | 90</h3>
@@ -196,10 +185,18 @@
    шаблона (например на дату), иначе у участниц не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-09-03';
-const DEFAULT_STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
+const TEMPLATE_VERSION = '2026-09-02';
 const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории, которая считается "челленджами" в сводке статистики
 const CHALLENGE_COMPLETE_THRESHOLD = 10; // сколько ссылок в одном задании считать "полностью выполненным челленджем"
+
+/* Финальная отправка итогов — один раз, по кнопке, в конце сезона.
+   FINAL_STATS_URL — ссылка на деплой Apps Script (см. отдельный файл скрипта).
+   FINAL_TOKEN — секретная строка, должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
+   Это не защита от целенаправленной атаки (то и другое видно в исходниках),
+   а просто фильтр от случайного мусора автоматических сканеров. */
+const FINAL_STATS_URL = 'https://script.google.com/macros/s/ВСТАВЬТЕ_СЮДА_ID_ДЕПЛОЯ/exec';
+const FINAL_TOKEN = 'ВСТАВЬТЕ_СЮДА_СВОЙ_СЕКРЕТ';
+
 const EMBEDDED_TEMPLATE = {
   "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
   "coverImage": "https://ic.pics.livejournal.com/fotovivo/19078119/11206812/11206812_original.png",
@@ -1572,8 +1569,7 @@ function loadState(){
   if(!state.progress) state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
   if(!state.progress.collapsed) state.progress.collapsed = {};
   if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
-    if(!state.settings) state.settings = {nick:'', statsUrl: DEFAULT_STATS_URL};
-  if(!state.settings.statsUrl) state.settings.statsUrl = DEFAULT_STATS_URL;
+  if(!state.settings) state.settings = {nick:''};
   if(state.templateVersion !== TEMPLATE_VERSION){
     // подтянули новую версию шаблона; личный прогресс (по id заданий) не трогаем
     state.title = EMBEDDED_TEMPLATE.title;
@@ -1586,6 +1582,7 @@ function loadState(){
 }
 
 let state = loadState();
+let sendingFinal = false;
 
 function findTask(id){
   for(const cat of state.categories){
@@ -1594,49 +1591,6 @@ function findTask(id){
   }
   return null;
 }
-
-const QUEUE_KEY = 'ljMarathonQueue_v1';
-function loadQueue(){ try{ return JSON.parse(localStorage.getItem(QUEUE_KEY)) || []; }catch(e){ return []; } }
-function saveQueue(q){ localStorage.setItem(QUEUE_KEY, JSON.stringify(q)); }
-
-function sendStat(payload){
-  if(!state.settings.statsUrl) return;
-  const item = Object.assign({nick: state.settings.nick || 'аноним', ts: new Date().toISOString()}, payload);
-  const q = loadQueue();
-  q.push(item);
-  saveQueue(q);
-  updateQueueBadge();
-  flushQueue();
-}
-
-let flushing = false;
-async function flushQueue(){
-  if(flushing || !state.settings.statsUrl) return;
-  flushing = true;
-  let q = loadQueue();
-  while(q.length){
-    const item = q[0];
-    try{
-      await fetch(state.settings.statsUrl, {
-        method:'POST', mode:'no-cors',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify(item)
-      });
-      q.shift();
-      saveQueue(q);
-    }catch(e){ break; }
-  }
-  flushing = false;
-  updateQueueBadge();
-}
-function updateQueueBadge(){
-  const el = document.getElementById('queueBadge');
-  if(!el) return;
-  const n = loadQueue().length;
-  el.textContent = n ? `⏳ не отправлено: ${n} — дошлётся само, как только будет связь` : '';
-}
-setInterval(flushQueue, 20000);
-window.addEventListener('online', flushQueue);
 
 function isLikelyUrl(s){
   const v = (s||'').trim();
@@ -1654,76 +1608,12 @@ function isDuplicateLink(taskId, idx, val){
   }
   return false;
 }
-function isPlausibleAppsScriptUrl(url){
-  return /^https:\/\/script\.google\.com\/macros\/s\/[^/]+\/exec$/.test((url||'').trim());
-}
-
-async function testStatsUrl(){
-  const url = state.settings.statsUrl;
-  const statusEl = document.getElementById('urlCheckStatus');
-  if(!isPlausibleAppsScriptUrl(url)){
-    statusEl.textContent = '✗ непохоже на ссылку Apps Script (нужна вида .../macros/s/.../exec)';
-    statusEl.style.color = 'var(--coral)';
-    return;
-  }
-  statusEl.textContent = 'проверяю…';
-  statusEl.style.color = '';
-  try{
-    const res = await fetch(url + (url.includes('?')?'&':'?') + 'ping=1');
-    const data = await res.json();
-    if(data && data.ok && data.app === 'lj-marathon-stats'){
-      statusEl.textContent = '✓ это наш скрипт, отвечает как надо';
-      statusEl.style.color = 'var(--forest)';
-    } else {
-      statusEl.textContent = '✗ отвечает, но не похоже на наш скрипт — проверь URL';
-      statusEl.style.color = 'var(--coral)';
-    }
-  }catch(e){
-    statusEl.textContent = '✗ не отвечает — проверь URL и что доступ у деплоя "Все"';
-    statusEl.style.color = 'var(--coral)';
-  }
-}
-
-async function loadStats(){
-  const listEl = document.getElementById('statsList');
-  if(!state.settings.statsUrl){ listEl.textContent = 'сначала укажите URL приёмника'; return; }
-  listEl.textContent = 'загрузка…';
-  try{
-    const res = await fetch(state.settings.statsUrl);
-    const data = await res.json();
-    if(!data.length){ listEl.textContent = 'пока пусто'; return; }
-
-    let totalPosts = 0, challengePosts = 0, completedChallenges = 0;
-    data.forEach(d=>{
-      let catName = d.category;
-      if(!catName && d.taskId){
-        const found = findTask(d.taskId);
-        if(found) catName = found.cat.name;
-      }
-      const count = Number(d.count) || 0;
-      totalPosts += count;
-      if((catName||'').trim().toLowerCase() === CHALLENGE_CATEGORY_NAME.toLowerCase()){
-        challengePosts += count;
-        if(count >= CHALLENGE_COMPLETE_THRESHOLD) completedChallenges++;
-      }
-    });
-
-    listEl.innerHTML = `
-      <div>Всего постов: <b class="mono">${totalPosts}</b></div>
-      <div>Из них в челленджах: <b class="mono">${challengePosts}</b></div>
-      <div>Полностью выполненных челленджей: <b class="mono">${completedChallenges}</b></div>
-    `;
-  }catch(e){
-    listEl.textContent = 'не удалось загрузить (проверьте URL и что Apps Script передеплоен)';
-  }
-}
 
 function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
 
 function getTaskState(id){
-  if(!state.progress.tasks[id]) state.progress.tasks[id] = {checked:false, links:[''], sentSlots:[], marks:{liked:false}};
+  if(!state.progress.tasks[id]) state.progress.tasks[id] = {checked:false, links:[''], marks:{liked:false}};
   const t = state.progress.tasks[id];
-  if(!t.sentSlots) t.sentSlots = [];
   if(!t.marks) t.marks = {liked:false};
   return t;
 }
@@ -1741,6 +1631,99 @@ function renderProgress(){
   document.getElementById('progressPct').textContent = pct+'%';
 }
 
+/* Локальный подсчёт статистики — без сети, из того же state,
+   тем же фильтром isLikelyUrl, что используется для подсветки "плохих" ссылок. */
+function renderLocalStats(){
+  const statsListEl = document.getElementById('statsList');
+  if(!statsListEl) return;
+  let totalLinks = 0, challengeLinks = 0, completedChallenges = 0;
+  state.categories.forEach(cat=>{
+    const isChallenge = (cat.name||'').trim().toLowerCase() === CHALLENGE_CATEGORY_NAME.toLowerCase();
+    cat.tasks.forEach(t=>{
+      const ts = state.progress.tasks[t.id];
+      if(!ts || !ts.links) return;
+      const count = ts.links.filter(isLikelyUrl).length;
+      totalLinks += count;
+      if(isChallenge){
+        challengeLinks += count;
+        if(count > 0 && count % CHALLENGE_COMPLETE_THRESHOLD === 0) completedChallenges++;
+      }
+    });
+  });
+  statsListEl.innerHTML = `
+    <div style="display:flex; flex-direction:column; gap:8px;">
+      <div>🔗 <b>Всего ссылок в чек-листе:</b> <span class="mono">${totalLinks}</span></div>
+      <div>🎯 <b>Из них в «Челленджах»:</b> <span class="mono">${challengeLinks}</span></div>
+      <div>🏆 <b>Полностью выполненных челленджей</b> (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</span></div>
+    </div>
+  `;
+}
+
+function collectFinalRows(){
+  const rows = [];
+  state.categories.forEach(cat=>{
+    cat.tasks.forEach(t=>{
+      const ts = state.progress.tasks[t.id];
+      if(!ts || !ts.links) return;
+      const count = ts.links.filter(isLikelyUrl).length;
+      if(count > 0){
+        rows.push({
+          category: cat.name,
+          task: t.text.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*\*/g,''),
+          taskId: t.id,
+          count
+        });
+      }
+    });
+  });
+  return rows;
+}
+
+async function sendFinalStats(){
+  if(sendingFinal) return;
+  if(state.progress.finalSent){
+    const prev = new Date(state.progress.finalSent.ts).toLocaleString('ru-RU');
+    if(!confirm(`Итоги уже отправлялись ${prev} (строк: ${state.progress.finalSent.rows}). Отправить ещё раз?`)) return;
+  }
+  const rows = collectFinalRows();
+  if(!rows.length){
+    alert('Пока нет ни одной введённой ссылки — отправлять нечего.');
+    return;
+  }
+  sendingFinal = true;
+  const statusEl = document.getElementById('finalSendStatus');
+  const btn = document.getElementById('sendFinalBtn');
+  btn.disabled = true;
+  statusEl.textContent = 'отправляю…';
+  const payload = {
+    type: 'final',
+    token: FINAL_TOKEN,
+    nick: state.settings.nick || 'аноним',
+    ts: new Date().toISOString(),
+    rows
+  };
+  try{
+    const res = await fetch(FINAL_STATS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    const data = await res.json();
+    if(data && data.ok){
+      state.progress.finalSent = {ts: payload.ts, rows: rows.length};
+      save();
+      statusEl.textContent = `✓ отправлено: ${rows.length} строк, ${new Date(payload.ts).toLocaleString('ru-RU')}`;
+    } else {
+      statusEl.textContent = '✗ сервер отклонил запрос' + (data && data.reason ? ' (' + data.reason + ')' : '');
+    }
+  }catch(err){
+    statusEl.textContent = '✗ не удалось отправить — нет связи или таблица ещё не готова. Можно попробовать ещё раз позже.';
+  }finally{
+    sendingFinal = false;
+    btn.disabled = false;
+  }
+}
+
 function renderMarathon(){
   
   const active = document.activeElement;
@@ -1755,10 +1738,17 @@ function renderMarathon(){
 
   document.getElementById('marathonTitle').textContent = '🦊 ' + (state.title || 'Марафон ЖЖ');
   document.getElementById('nickInput').value = state.settings.nick || '';
-  document.getElementById('statsUrlInput').value = state.settings.statsUrl || '';
-  document.getElementById('statsCard').style.display = state.settings.statsUrl ? 'block' : 'none';
-  updateQueueBadge();
   renderCover();
+  renderLocalStats();
+
+  if(!sendingFinal){
+    const finalStatusEl = document.getElementById('finalSendStatus');
+    if(finalStatusEl){
+      finalStatusEl.textContent = state.progress.finalSent
+        ? `✓ последняя отправка: ${new Date(state.progress.finalSent.ts).toLocaleString('ru-RU')}, строк: ${state.progress.finalSent.rows}`
+        : '';
+    }
+  }
 
   const qEl = document.getElementById('quotasList');
   qEl.innerHTML = state.quotas.map(q=>{
@@ -1849,13 +1839,7 @@ function renderCover(){
 }
 
 document.getElementById('nickInput').addEventListener('input', e=>{ state.settings.nick = e.target.value; save(); });
-document.getElementById('statsUrlInput').addEventListener('input', e=>{
-  state.settings.statsUrl = e.target.value; save();
-  document.getElementById('statsCard').style.display = state.settings.statsUrl ? 'block' : 'none';
-  document.getElementById('urlCheckStatus').textContent = '';
-});
-document.getElementById('testUrlBtn').addEventListener('click', testStatsUrl);
-document.getElementById('refreshStats').addEventListener('click', loadStats);
+document.getElementById('sendFinalBtn').addEventListener('click', sendFinalStats);
 
 document.getElementById('quotasList').addEventListener('input', e=>{
   if(e.target.dataset.quota){
@@ -1896,7 +1880,7 @@ function checkTaskLinkMilestone(taskId){
   if(!state.progress.milestones.tasks) state.progress.milestones.tasks = {};
 
   const ts = getTaskState(taskId);
-  const validCount = ts.sentSlots.filter(Boolean).length; // сколько ссылок в этом задании реально приняты (не дубли и не мусор)
+  const validCount = ts.links.filter(isLikelyUrl).length;
 
   if(validCount > 0 && validCount % CHALLENGE_COMPLETE_THRESHOLD === 0 && validCount > (state.progress.milestones.tasks[taskId]||0)){
     state.progress.milestones.tasks[taskId] = validCount;
@@ -1910,8 +1894,6 @@ function checkTaskLinkMilestone(taskId){
 function checkGlobalLinkMilestone(){
   if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
 
-  // Для праздника считаем все корректно заполненные ссылки в чек-листе,
-  // независимо от того, успела ли статистика отправиться.
   const totalLinks = Object.values(state.progress.tasks)
     .reduce((sum,t) => sum + (t.links ? t.links.filter(v => isLikelyUrl(v)).length : 0), 0);
 
@@ -1959,7 +1941,6 @@ document.getElementById('categoriesView').addEventListener('focusout', e=>{
     const [id, idxStr] = e.target.dataset.link.split('|');
     const idx = parseInt(idxStr,10);
     const val = e.target.value.trim();
-    const ts = getTaskState(id);
     if(!val) return;
     const bad = !isLikelyUrl(val);
     const dup = !bad && isDuplicateLink(id, idx, val);
@@ -1967,15 +1948,9 @@ document.getElementById('categoriesView').addEventListener('focusout', e=>{
       renderMarathon();
       return; // некорректная или повторная ссылка — в статистику не идёт
     }
-    if(ts.sentSlots[idx]) return;
-    const found = findTask(id);
-    if(found){
-      sendStat({category: found.cat.name, task: found.task.text, taskId: id, idx});
-      ts.sentSlots[idx] = true;
-      save();
-      checkTaskLinkMilestone(id);
-      checkGlobalLinkMilestone();
-    }
+    checkTaskLinkMilestone(id);
+    checkGlobalLinkMilestone();
+    renderMarathon();
   }
 });
 document.getElementById('categoriesView').addEventListener('click', e=>{
@@ -2025,7 +2000,6 @@ document.getElementById('exportFull').addEventListener('click', ()=>{
 document.getElementById('importFullBtn').addEventListener('click', ()=>document.getElementById('fileInputFull').click());
 document.getElementById('resetAllBtn').addEventListener('click', ()=>{
   if(!confirm('Точно стереть весь ваш прогресс — все галочки, ссылки и цели на сезон? Список заданий останется, отменить сброс нельзя.')) return;
-  localStorage.removeItem(QUEUE_KEY);
   state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
   save();
   renderMarathon();
@@ -2039,7 +2013,7 @@ document.getElementById('fileInputFull').addEventListener('change', e=>{
       if(!state.progress) state.progress={quotaTargets:{}, tasks:{}, collapsed:{}};
       if(!state.progress.collapsed) state.progress.collapsed = {};
       if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
-      if(!state.settings) state.settings={nick:'', statsUrl:''};
+      if(!state.settings) state.settings={nick:''};
       save(); renderMarathon();
     }catch(err){ alert('Не удалось прочитать сохраненный файл'); }
   };
@@ -2059,25 +2033,14 @@ function formatTaskText(s){
 function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
 
 renderMarathon();
-flushQueue();
 </script>
 
 <div class="typo-strip">
-  <form id="typoForm" class="typo-row">
-    <span class="typo-label">Заметили опечатку?</span>
-    <input type="text" id="typoMessage" placeholder="Напишите!" required>
-    <button type="submit" class="ghost">Отправить</button>
-  </form>
-  <div id="typoThanks" class="typo-thanks" hidden>Спасибо! Мы изучим вопрос.</div>
+  <div class="typo-row">
+    <span class="typo-label">Заметили опечатку или есть вопрос?</span>
+    <a class="ghost" href="https://4ek-lis.livejournal.com/34239.html" target="_blank" rel="noopener noreferrer">Напишите в ЖЖ →</a>
+  </div>
 </div>
 
-<script>
-document.getElementById('typoForm').addEventListener('submit', function(e) {
-  e.preventDefault();
-
-  document.getElementById('typoForm').hidden = true;
-  document.getElementById('typoThanks').hidden = false;
-});
-</script>
 </body>
 </html>
