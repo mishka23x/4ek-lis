@@ -1,0 +1,32 @@
+{
+  "title": "<img src=x onerror=window.__importXss=1>",
+  "coverImage": "https://example.invalid/tracking-pixel.png",
+  "quotas": [],
+  "categories": [
+    {
+      "id": "evil-category",
+      "name": "EVIL",
+      "desc": "[x](https://example.com/\"onmouseover=\"window.__importXss=1)",
+      "tasks": []
+    }
+  ],
+  "templateVersion": "2025-old",
+  "progress": {
+    "quotaTargets": {},
+    "tasks": {
+      "tfx6utys": {
+        "checked": true,
+        "links": [
+          "https://example.com/safe-progress"
+        ],
+        "marks": {
+          "liked": false
+        }
+      }
+    },
+    "collapsed": {}
+  },
+  "settings": {
+    "nick": "safe-imported-progress"
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 2,
+  "templateVersion": "2026-11-22",
+  "progress": {
+    "quotaTargets": {},
+    "tasks": {
+      "__proto__": {
+        "checked": true,
+        "links": [],
+        "marks": {
+          "liked": true
+        }
+      }
+    },
+    "collapsed": {}
+  },
+  "settings": {
+    "nick": "prototype-test"
+  }
+}

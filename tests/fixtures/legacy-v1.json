@@ -1,0 +1,36 @@
+{
+  "title": "UNTRUSTED OLD TITLE",
+  "coverImage": "https://example.invalid/untrusted-cover.png",
+  "quotas": [],
+  "categories": [],
+  "templateVersion": "2025-old",
+  "progress": {
+    "quotaTargets": {
+      "tozswlic": "12"
+    },
+    "tasks": {
+      "tsgby0gy": {
+        "checked": true,
+        "links": [
+          "https://example.com/legacy-post"
+        ],
+        "marks": {
+          "liked": true
+        }
+      }
+    },
+    "collapsed": {
+      "cev0xx9h": true
+    },
+    "milestones": {
+      "global": 10,
+      "cats": {},
+      "tasks": {
+        "tsgby0gy": 10
+      }
+    }
+  },
+  "settings": {
+    "nick": "legacy-user"
+  }
+}
