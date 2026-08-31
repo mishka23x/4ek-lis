@@ -30,7 +30,7 @@
   .faq-item{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); margin-bottom:12px; overflow:hidden; }
   .faq-item summary{
     list-style:none; cursor:pointer; padding:14px 46px 14px 18px; position:relative;
-    font-weight:700; color:var(--forest); font-size:calc(16px * var(--text-scale));
+    font-weight:600; color:var(--forest); font-size:calc(16px * var(--text-scale));
   }
   .faq-item summary::-webkit-details-marker{ display:none; }
   .faq-item summary::after{
@@ -78,19 +78,7 @@
 
   .card{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-top:22px; }
   .card h3{ font-family:var(--font-display); color:var(--forest); margin:0 0 6px; font-size:calc(17px * var(--text-scale)); }
-  .card .hint{ color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin:0 0 12px; }
-  .card input[type=text], .card textarea{
-    width:100%; box-sizing:border-box; font-family:var(--font-body); font-size:calc(14px * var(--text-scale));
-    padding:9px 11px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); margin-bottom:8px;
-  }
-  .card textarea{ min-height:90px; resize:vertical; }
-  .card button{
-    background:var(--forest); color:var(--paper); border:none; padding:10px 20px;
-    border-radius:7px; font-weight:600; cursor:pointer; font-size:calc(14px * var(--text-scale)); font-family:var(--font-body);
-  }
-  .card button:hover{ background:var(--forest-2); }
-  .card button:disabled{ opacity:.5; cursor:default; }
-  #askStatus{ margin-top:10px; font-size:calc(13px * var(--text-scale)); color:var(--ink-soft); }
+  .card .hint{ color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin:0; }
 </style>
 </head>
 <body>
@@ -107,22 +95,19 @@
   <div id="faqList"></div>
 
   <div class="card">
-    <h3>Задайте свой вопрос</h3>
-    <input type="text" id="askNick" placeholder="Ваш ник">
-    <textarea id="askText" placeholder="Ваш вопрос..."></textarea>
-    <button id="askSubmit">Отправить</button>
-    <div id="askStatus"></div>
+    <h3>Остались вопросы?</h3>
+    <p class="hint">Напишите нам: <a href="https://4ek-lis.livejournal.com/34239.html" target="_blank" rel="noopener noreferrer">4ek-lis на связи</a></p>
   </div>
 </main>
 
 <script>
 /* ============================================================
-   ШАБЛОН СТРАНИЦЫ — единственное место, которое меняется вручную.
+   ШАБЛОН СТРАНИЦЫ — меняется вручную.
    Вставь сюда содержимое файла faq-shablon.json, экспортированного
    из конструктора (кнопка "⇩ шаблон"). TEMPLATE_VERSION — любая
    строка, меняй при каждом обновлении (например на дату).
    ============================================================ */
-const TEMPLATE_VERSION = '2026-08-30';
+const TEMPLATE_VERSION = '2026-11-29';
 const EMBEDDED_TEMPLATE = {
   "title": "ЧАВО по чек-листу и его функциям",
   "items": [
@@ -138,16 +123,24 @@ const EMBEDDED_TEMPLATE = {
       "a": "— Не виден никому. Данные хранятся в памяти браузера и не выходят за пределы компьютера. Статистика учитывает только количество заполненных чек-боксов, но их содержимое никуда не отправляется. \n- Как следствие: Чек-лист от 4ek-Lisa может использовать кто угодно по своему усмотрению, не зависимо от аккаунта в ЖЖ."
     },
     {
-      "q": "Почему рядом с полем для ссылки появляется предупреждение со значком ⚠?",
-      "a": "— Сообщение «такая ссылка уже есть» предупреждает о дубликатах, а  «не похоже на ссылку» - если в форму попадает случайный текст, а не link. \nСкрипт не проверяет адреса, относятся ли они к актуальному посту в блоге или к сайту прогноз-погоды. Это дело автора, какие списки хранить в органайзере. Некорректная ссылка — в статистику не попадает"
-    },
-    {
       "q": "Что будет с заполененным чек-листом, если я закрою браузер?",
       "a": "— Все записи сохранятся, они переживут и перезагрузку и выключение компьютера. Не переживут - переустановку браузера или удаление кеша.\nНа этот случай рекомендуется предварительно сделать бэкап: кнопка \"Мой прогресс ⬆️\", позже можно будет восстановить состояние страницы из файла."
     },
     {
       "q": "Я все заполнил на ноутбуке, зашел с мобильного с тем же ником - а чек-лист пуст, как так?",
       "a": "— Чек-Лист можно просматривать и дополнять только в одном браузере, на одном устройстве (это не наш выбор, а техническое ограничение платформы)"
+    },
+	{
+      "q": "Для чего в чек-боксах сердечки?",
+      "a": "— Отмечать то, что приглянулось"
+    },
+	{
+      "q": "Что за фейерверк на экране, когда я отмечаю десятое задание?",
+      "a": "— Чисто для настроения, на \"седло большое, ковер и телевизор в подарок...\" рассчитывать не приходится, вместо призов - маленький комплимент от Чек-Лися."
+    },
+	 {
+      "q": "Почему рядом с полем для ссылки появляется предупреждение со значком ⚠?",
+      "a": "— Сообщение «такая ссылка уже есть» предупреждает о дубликатах, а  «не похоже на ссылку» - если в форму попадает случайный текст, а не link. \nСкрипт не проверяет адреса, относятся ли они к актуальному посту в блоге или к сайту прогноз-погоды. Это дело автора, какие списки хранить в органайзере. Некорректная ссылка — в статистику не попадает"
     },
     {
       "q": "Заданий так много, я не успею столько написать за осень...",
@@ -156,10 +149,6 @@ const EMBEDDED_TEMPLATE = {
     {
       "q": "Зачем вообще нужны челленджи? Напишу, сколько напишется, когда и если захочется, для чего мне отчитываться?",
       "a": "— Чек-лист - это органайзер, а не контролер. А еще - \"красочное меню\" (порой \"аппетит приходит во время еды\"). \nРешил вести дневник: челленджи (\"пацан сказал - пацан сделал\") - визуализируют намерение и помогают следовать этому решению, тем более в сообществе коллег по марафону."
-    },
-    {
-      "q": "Что за фейерверк на экране, когда я отмечаю десятое задание?",
-      "a": "— Чисто для настроения, на \"седло большое, ковер и телевизор в подарок...\" рассчитывать не приходится, вместо призов - маленький бонус от Чек-Лися."
     },
     {
       "q": "Что по итогам, для успешно \"пробежавших намеченную в чек-листе дистанцию\"?",
@@ -194,29 +183,6 @@ listEl.innerHTML = items.map((it, i) => `
     <div class="faq-answer">${formatText(it.a || '')}</div>
   </details>
 `).join('') || '<div class="empty">вопросов пока нет</div>';
-
-const STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
-
-document.getElementById('askSubmit').addEventListener('click', ()=>{
-  const nick = document.getElementById('askNick').value.trim();
-  const text = document.getElementById('askText').value.trim();
-  const statusEl = document.getElementById('askStatus');
-  const btn = document.getElementById('askSubmit');
-
-  if(!text){ statusEl.textContent = 'Сначала напишите вопрос.'; return; }
-
-  btn.disabled = true;
-  fetch(STATS_URL, {
-    method: 'POST',
-    mode: 'no-cors',
-    headers: {'Content-Type': 'text/plain;charset=utf-8'},
-    body: JSON.stringify({type: 'question', ts: new Date().toISOString(), nick: nick || 'аноним', text})
-  }).catch(()=>{});
-
-  statusEl.textContent = 'Спасибо! Вопрос отправлен.';
-  document.getElementById('askText').value = '';
-  setTimeout(()=>{ btn.disabled = false; }, 3000);
-});
 </script>
 </body>
 </html>
