@@ -3,90 +3,108 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' https://ic.pics.livejournal.com data:; connect-src 'self' https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <title>4ek-list</title>
 	<link rel="icon" type="image/png" href="favicon.png">
 <style>
   :root{
-     --text-scale:1.40;
-    --paper:#F7F1E4; --paper-2:#EFE7D2; --ink:#2B2A24; --ink-soft:#6B6656;
+    --text-scale:1.40;
+    --paper:#F7F1E4; --paper-2:#EFE7D2; --ink:#2B2A24; --ink-soft:#5B5649;
     --forest:#2F4A3D; --forest-2:#456654; --amber:#B8752E; --amber-soft:#EADFC4;
-    --coral:#B14A3B; --line:#DCD0AE; --radius:10px;
+    --amber-text:#86501E; --coral:#9A392F; --line:#DCD0AE; --control-line:#877C61;
+    --focus:#7A3E00; --radius:10px; --progress-footer-height:90px;
     --font-display: Segoe UI Variable, Roboto, Arial, sans-serif;
     --font-body: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
     --font-mono: 'Courier New', Consolas, monospace;
   }
   *{box-sizing:border-box;}
-  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); line-height:1.5; padding-bottom:90px; }
+  html{scroll-padding-top:12px; scroll-padding-bottom:calc(var(--progress-footer-height) + 20px + env(safe-area-inset-bottom));}
+  body{ margin:0; background:var(--paper); color:var(--ink); font-family:var(--font-body); line-height:1.5; padding-bottom:calc(var(--progress-footer-height) + 24px + env(safe-area-inset-bottom)); overflow-wrap:break-word; }
   h1,h2,h3{font-family:var(--font-display); margin:0; color:var(--forest);}
   .mono{font-family:var(--font-mono);}
+  .visually-hidden{position:absolute!important; width:1px!important; height:1px!important; padding:0!important; margin:-1px!important; overflow:hidden!important; clip:rect(0,0,0,0)!important; white-space:nowrap!important; border:0!important;}
+  .skip-link{position:fixed; z-index:10000; top:8px; left:8px; transform:translateY(-160%); background:#fffdf8; color:var(--forest); border:2px solid var(--focus); border-radius:7px; padding:9px 12px; font-weight:700;}
+  .skip-link:focus{transform:none;}
   header.top{ padding:22px 24px 16px; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
-  header.top h1{font-size:calc(26px * var(--text-scale)); font-weight:700;}
-  header.top .sub{color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin-top:2px;}
+  header.top>div:first-child{min-width:0; max-width:100%;}
+  header.top h1{font-size:calc(26px * var(--text-scale)); font-weight:700; overflow-wrap:anywhere;}
+  header.top .sub{color:var(--ink-soft); font-size:calc(13px * var(--text-scale)); margin-top:2px; overflow-wrap:anywhere;}
   .iobar{display:flex; gap:8px; flex-wrap:wrap; align-items:center;}
-  button.ghost{ border:1px solid var(--line); background:transparent; color:var(--ink-soft); padding:7px 12px; border-radius:8px; font-size:calc(12px * var(--text-scale)); cursor:pointer; font-family:var(--font-body); }
-  button.ghost:hover{border-color:var(--forest); color:var(--forest);}
+  button,.faq-link,a.ghost{touch-action:manipulation;}
+  button.ghost{ border:1px solid var(--control-line); background:transparent; color:var(--ink-soft); min-height:40px; padding:7px 12px; border-radius:8px; font-size:calc(12px * var(--text-scale)); cursor:pointer; font-family:var(--font-body); }
   button.ghost:disabled{opacity:.5; cursor:default;}
-  main{max-width:1300px; margin:0 auto; padding:20px 24px;}
+  main{width:100%; max-width:1300px; min-width:0; margin:0 auto; padding:20px 24px;}
   .card{ background:#fffdf8; border:1px solid var(--line); border-radius:var(--radius); padding:18px 20px; margin-bottom:18px; }
-  .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-  input[type=text], input[type=number]{ font-family:var(--font-body); font-size:calc(14px * var(--text-scale)); padding:8px 10px; border:1px solid var(--line); border-radius:7px; background:#fff; color:var(--ink); }
-  .cat-header{display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;}
-  .cat-header h3{font-size:calc(18px * var(--text-scale));}
-  .task-grid{display:grid; grid-template-columns:1fr 1fr; gap:8px 16px;}
+  .row{display:flex; min-width:0; gap:10px; align-items:center; flex-wrap:wrap;}
+  input[type=text], input[type=url], input[type=number]{ max-width:100%; font-family:var(--font-body); font-size:calc(14px * var(--text-scale)); padding:8px 10px; border:1px solid var(--control-line); border-radius:7px; background:#fff; color:var(--ink); }
+  .cat-header{display:flex; min-width:0; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;}
+  .cat-title-row{flex:1; flex-wrap:nowrap; gap:6px;}
+  .cat-header h2{min-width:0; font-size:calc(18px * var(--text-scale)); overflow-wrap:anywhere;}
+  .category-count{flex:none; margin-top:0;}
+  .task-grid{display:grid; min-width:0; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:8px 16px;}
   @media (max-width:640px){.task-grid{grid-template-columns:1fr;}}
-   .task-card{ border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fffefb; }
-   .task-card.done{background:var(--amber-soft); border-color:var(--amber);}
-   .task-card-inner{display:grid; grid-template-columns:minmax(0,1fr) auto; column-gap:10px; align-items:start;}
-   .task-card label{display:flex; gap:8px; align-items:flex-start; cursor:pointer; font-size:calc(14px * var(--text-scale)); min-width:0;}
-   .task-card label span{white-space:pre-line;}
-   .task-card input[type=checkbox]{margin-top:4px; width:18px; height:18px; accent-color:var(--forest); flex:none;}
-   .task-card .task-marks{grid-column:2; grid-row:1; display:flex; flex-direction:column; gap:5px; margin:0;}
-   .task-card .links{grid-column:1 / -1; margin:8px 0 0 26px; display:flex; flex-direction:column; gap:6px;}
+  .task-card{min-width:0; border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fffefb;}
+  .task-card.done{background:var(--amber-soft); border-color:var(--amber);}
+  .task-card-inner{display:grid; min-width:0; grid-template-columns:minmax(0,1fr) auto; column-gap:10px; align-items:start;}
+  .task-choice{display:grid; min-width:0; grid-template-columns:24px minmax(0,1fr); gap:8px; align-items:start; font-size:calc(14px * var(--text-scale));}
+  .task-text{min-width:0; white-space:pre-line; overflow-wrap:anywhere; cursor:pointer;}
+  .task-text a{cursor:pointer;}
+  .task-card input[type=checkbox]{margin:4px 0 0; width:22px; height:22px; accent-color:var(--forest); flex:none;}
+  .task-card .task-marks{grid-column:2; grid-row:1; display:flex; flex-direction:column; gap:5px; margin:0;}
+  .task-card .links{grid-column:1 / -1; min-width:0; margin:8px 0 0 32px; display:flex; flex-direction:column; gap:6px;}
   .link-field{display:flex; flex-direction:column; gap:2px;}
-  .link-row{display:flex; align-items:center; gap:6px;}
+  .link-row{display:flex; min-width:0; align-items:center; gap:6px;}
   .link-num{color:var(--ink-soft); font-weight:700; font-size:calc(12px * var(--text-scale)); flex:none; min-width:1.6em; text-align:right;}
-  .link-row input{flex:1; min-width:0;}
+  .link-row input{width:100%; flex:1; min-width:0;}
   .links input{font-size:calc(12px * var(--text-scale)); padding:6px 8px;}
   .links input.link-bad{border-color:var(--coral); background:#FBEAE6;}
   .link-warn{font-size:calc(11px * var(--text-scale)); color:var(--coral);}
-  .quotas{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:12px; margin-bottom:6px;}
+  .quotas{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(200px,100%),1fr)); gap:12px; margin-bottom:6px;}
   .quota{border:1px solid var(--line); border-radius:8px; padding:10px 12px; background:#fffefb;}
-  .quota .label{font-size:calc(13px * var(--text-scale)); color:var(--ink-soft); margin-bottom:6px;}
+  .quota .label{display:block; font-size:calc(13px * var(--text-scale)); color:var(--ink-soft); margin-bottom:6px;}
   .quota .set{display:flex; align-items:center; gap:8px;}
   .quota input[type=number]{width:70px;}
-  footer.progress{ position:fixed; bottom:0; left:0; right:0; background:#fffdf8; border-top:1px solid var(--line); padding:10px 24px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
-  .bar-wrap{flex:1; min-width:200px; height:10px; background:var(--paper-2); border-radius:999px; overflow:hidden;}
-  .bar-fill{height:100%; background:var(--amber); transition:width .3s;}
+  footer.progress{position:fixed; z-index:1000; bottom:0; left:0; right:0; background:#fffdf8; border-top:1px solid var(--control-line); padding:10px 24px calc(10px + env(safe-area-inset-bottom)); display:flex; align-items:center; gap:16px; flex-wrap:nowrap;}
+  progress.bar-wrap{flex:1; min-width:0; height:10px; appearance:none; border:0; background:var(--paper-2); border-radius:999px; overflow:hidden;}
+  progress.bar-wrap::-webkit-progress-bar{background:var(--paper-2); border-radius:999px;}
+  progress.bar-wrap::-webkit-progress-value{background:var(--amber); border-radius:999px;}
+  progress.bar-wrap::-moz-progress-bar{background:var(--amber); border-radius:999px;}
   .progress-num{font-family:var(--font-mono); font-weight:700; color:var(--forest); white-space:nowrap;}
+  footer.progress .hint{margin-top:0; white-space:nowrap;}
   .hint{color:var(--ink-soft); font-size:calc(12px * var(--text-scale)); margin-top:6px;}
   .empty{color:var(--ink-soft); font-style:italic; font-size:calc(14px * var(--text-scale));}
   #fileInputFull{display:none;}
+  #announceBlock{width:100%;}
+  .reset-button{border-color:var(--coral)!important; color:var(--coral)!important;}
+  .field-label{display:block;}
+  .nick-input{width:220px;}
+  .sync-hint,.final-status{margin-top:6px;}
+  .section-heading{margin-bottom:10px; font-size:calc(18px * var(--text-scale));}
+  .final-send-wrap{margin-top:14px; padding-top:14px; border-top:1px solid var(--line);}
 
   main a, .cat-desc a{ color:var(--forest); text-decoration:none; border-bottom:1px solid var(--amber); padding-bottom:1px; }
-  main a:hover, .cat-desc a:hover{ color:var(--amber-2,var(--amber)); border-bottom-color:var(--forest); }
-  a.tag-link{ display:inline-block; ; color:var(--forest); font-weight: 600; border:1px solid var(--amber); border-radius:999px; padding:1px 10px 2px; font-size:1.2em; border-bottom:none; text-decoration:none; }
-  a.tag-link:hover{ background:var(--forest); color:var(--paper); border-color:var(--forest); }
+  a.tag-link{display:inline; max-inline-size:100%; color:var(--forest); font-weight:600; border:1px solid var(--amber); border-radius:999px; padding:1px 10px 2px; font-size:1.2em; border-bottom:none; text-decoration:none; overflow-wrap:anywhere; box-decoration-break:clone; -webkit-box-decoration-break:clone;}
 
-  #coverImageWrap{ max-width:1300px; margin:0 auto 18px; padding:0 24px; }
-  #coverImageWrap img{ width:100%; display:block; border-radius:var(--radius); border:1px solid var(--line); }
+  #coverImageWrap{width:100%; max-width:1300px; aspect-ratio:2459 / 432; margin:0 auto 18px; padding:0 24px;}
+  #coverImageWrap img{width:100%; height:100%; object-fit:contain; display:block; border-radius:var(--radius); border:1px solid var(--line);}
+  #coverImageWrap.cover-error img{visibility:hidden;}
 
-  .cat-desc{ font-size:calc(18px * var(--text-scale)); font-weight: 700; color:var(--ink-soft); border-radius:8px; padding:6px 10px; margin-bottom:8px; white-space:pre-line; }
+  .cat-desc{min-width:0; font-size:calc(18px * var(--text-scale)); font-weight:700; color:var(--ink-soft); border-radius:8px; padding:6px 10px; margin-bottom:8px; white-space:pre-line; overflow-wrap:anywhere;}
 
-  .cat-toggle{ background:transparent; border:1px solid var(--line); color:var(--ink-soft); width:26px; height:26px; border-radius:6px; cursor:pointer; font-size:12px; margin-right:8px; transition:transform .15s; flex:none; }
-  .cat-toggle:hover{ border-color:var(--forest); color:var(--forest); }
+  .cat-toggle{background:transparent; border:1px solid var(--control-line); color:var(--ink-soft); width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:12px; flex:none;}
   .card.collapsed .cat-body{ display:none; }
-  .collapse-toolbar{ display:flex; justify-content:flex-end; gap:8px; margin:2px 0 10px; }
+  .collapse-toolbar{display:flex; justify-content:flex-end; gap:8px; margin:2px 0 10px; flex-wrap:wrap;}
 
-  .mark-btn{ border:1px solid var(--line); background:#fff; color:var(--ink-soft); width:30px; height:30px; border-radius:6px; cursor:pointer; font-size:calc(13px * var(--text-scale)); line-height:1; display:flex; align-items:center; justify-content:center; padding:0; }
-  .mark-btn:hover{ border-color:var(--forest); color:var(--forest); }
+  .mark-btn{border:1px solid var(--control-line); background:#fff; color:var(--ink-soft); width:34px; height:34px; border-radius:6px; cursor:pointer; font-size:calc(13px * var(--text-scale)); line-height:1; display:flex; align-items:center; justify-content:center; padding:0;}
   .mark-btn.on{ background:var(--amber-soft); border-color:var(--amber); color:var(--amber); }
   .mark-btn.on[data-mark*="|liked"]{ background:#F6D9D2; border-color:var(--coral); color:var(--coral); }
 
   .typo-strip{ max-width:1300px; margin:0 auto 24px; padding:0 24px; }
-  .typo-row{ display:flex; align-items:center; gap:10px; background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:10px 16px; }
-  .typo-row .typo-label{ color:var(--ink-soft); font-size:calc(12px * var(--text-scale)); white-space:nowrap; }
+  .typo-row{display:flex; align-items:center; gap:10px; background:var(--paper-2); border:1px solid var(--line); border-radius:999px; padding:10px 16px; flex-wrap:wrap;}
+  .typo-row .typo-label{color:var(--ink-soft); font-size:calc(12px * var(--text-scale));}
   .typo-row a.ghost{ text-decoration:none; }
   .task-num{ color:var(--ink-soft); font-weight:700; }
+  .stats-values{display:flex; flex-direction:column; gap:8px;}
   #celebrateLayer{position:fixed; inset:0; pointer-events:none; z-index:9999; overflow:hidden;}
   .celebrate-msg{
     position:fixed; top:16%; left:50%; transform:translate(-50%,-40px) scale(.8);
@@ -108,31 +126,62 @@
   @keyframes celebrateFall{
     0%{ transform:translateY(0) rotate(0deg); opacity:1; }
     100%{ transform:translateY(100vh) rotate(360deg); opacity:0; }
-  }  .faq-link{
+  }
+  .celebrate-msg-reduced{opacity:1; transform:translate(-50%,0); animation:none;}
+  .faq-link{
     color:var(--forest); font-family:var(--font-display); font-weight:700;
-    font-size:calc(15px * var(--text-scale)); text-decoration:none;
+    min-height:40px; display:inline-flex; align-items:center; font-size:calc(15px * var(--text-scale)); text-decoration:none;
     border-bottom:2px solid var(--amber); padding-bottom:1px; margin-right:6px;
   }
-  .faq-link:hover{ color:var(--amber); border-bottom-color:var(--forest); }
+  :where(button,a,input,summary):focus-visible{outline:3px solid var(--focus); outline-offset:3px;}
+  :where(input,button,a){scroll-margin-block:12px calc(var(--progress-footer-height) + 20px);}
+  @media (hover:hover){
+    button.ghost:hover,.cat-toggle:hover,.mark-btn:hover{border-color:var(--forest); color:var(--forest);}
+    main a:hover,.cat-desc a:hover,.faq-link:hover{color:var(--amber-text); border-bottom-color:var(--forest);}
+    a.tag-link:hover{background:var(--forest); color:var(--paper); border-color:var(--forest);}
+  }
+  @media (max-width:640px){
+    header.top,main{padding-left:16px; padding-right:16px;}
+    .iobar{width:100%;}
+    input[type=text],input[type=url],input[type=number]{font-size:max(16px,calc(14px * var(--text-scale)));}
+    .links input{font-size:max(16px,calc(12px * var(--text-scale)));}
+    button.ghost,.faq-link,.cat-toggle,.mark-btn{min-height:44px;}
+    .cat-toggle,.mark-btn{width:44px; height:44px;}
+    footer.progress{padding-left:12px; padding-right:12px; gap:8px;}
+    .card{padding:14px 12px;}
+    .task-card .links{margin-left:0;}
+    #coverImageWrap,.typo-strip{padding-left:16px; padding-right:16px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html:focus-within{scroll-behavior:auto;}
+    *,*::before,*::after{animation-duration:.01ms!important; animation-iteration-count:1!important; transition-duration:.01ms!important;}
+    .celebrate-particle{display:none;}
+  }
+  @media (forced-colors:active){
+    .task-card.done,.mark-btn.on{forced-color-adjust:auto;}
+    :where(button,a,input):focus-visible{outline-color:Highlight;}
+  }
 </style>
 </head>
 <body>
 
+<a class="skip-link" href="#mainContent">Перейти к содержанию</a>
+<div class="visually-hidden" id="appStatus" role="status" aria-live="polite" aria-atomic="true"></div>
 <header class="top">
   <div>
-    <h1 id="marathonTitle">🦊 Чек-листы от Чек-Лися </h1>
+    <h1 id="marathonTitle">🦊 #НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa</h1>
     <div class="sub">Органайзер для марафонских хешмобов и челленджей</div>
   </div>
   <div class="iobar">
-    <button class="ghost" id="exportFull">⇧ сохранить</button>
-    <button class="ghost" id="importFullBtn">⇩ восстановить</button>
+    <button type="button" class="ghost" id="exportFull">⇧ сохранить</button>
+    <button type="button" class="ghost" id="importFullBtn">⇩ восстановить</button>
     <a href="https://365grain.github.io/4ek-lis/" class="faq-link" target="_blank" rel="noopener noreferrer">❓ЧАВО</a>
-    <button class="ghost" id="resetAllBtn" style="border-color:var(--coral); color:var(--coral);">✕ сбросить всё</button>
-    <input type="file" id="fileInputFull" accept=".json">
+    <button type="button" class="ghost reset-button" id="resetAllBtn">✕ сбросить всё</button>
+    <input type="file" id="fileInputFull" accept=".json,application/json">
   </div>
 </header>
 
-<div id="announceBlock" style="width:100%; box-sizing:border-box;">
+<div id="announceBlock">
   <!-- ЗДЕСЬ МОЖНО ВСТАВИТЬ СВОЙ HTML-БЛОК ВО ВСЮ ШИРИНУ СТРАНИЦЫ.
        Контейнер уже растянут на 100% ширины — просто пишите внутри
        обычные теги (p, img, table и т.п.).
@@ -140,66 +189,55 @@
 </div>
 
 
-<div id="coverImageWrap" style="display:none;"><img id="coverImageImg" alt=""></div>
+<div id="coverImageWrap"><img id="coverImageImg" src="https://ic.pics.livejournal.com/fotovivo/19078119/11206812/11206812_original.png" alt="" width="2459" height="432" decoding="async" referrerpolicy="no-referrer"></div>
 
-<main>
+<main id="mainContent" tabindex="-1">
   <div class="card" id="syncCard">
     <div class="row">
       <div>
-        <label class="hint" style="display:block;">Ник (имя пользователя)</label>
-        <input type="text" id="nickInput" style="width:220px;">
+        <label class="hint field-label" for="nickInput">Ник (имя пользователя)</label>
+        <input type="text" class="nick-input" id="nickInput" name="nickname" autocomplete="nickname">
       </div>
     </div>
-    <div class="hint" style="margin-top:6px;" hidden >«Отправить итоги сезона»</div>
+    <div class="hint sync-hint" hidden>«Отправить итоги сезона»</div>
   </div>
   <!-- Блок статистики и кнопки финальной отправки за атрибутом hidden.
        в конце сезона убрать  hidden . -->
   <div class="card" id="statsCard" >
-    <h3 style="margin-bottom:10px;">Статистика</h3>
+    <h2 class="section-heading">Статистика</h2>
     <div id="statsList" class="hint">—</div>
-    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); hidden">
-      <button class="ghost" id="sendFinalBtn">📤 Отправить итоги сезона</button>
-      <div class="hint" id="finalSendStatus" style="margin-top:6px;"></div>
+    <div class="final-send-wrap" id="finalSendWrap" hidden>
+      <button type="button" class="ghost" id="sendFinalBtn">📤 Отправить итоги сезона</button>
+      <div class="hint final-status" id="finalSendStatus" role="status" aria-live="polite" aria-atomic="true"></div>
     </div>
   </div>
   <div class="card">
-    <h3 style="margin-bottom:10px;">Планы на сезон 10 | 30 | 60 | 90</h3>
+    <h2 class="section-heading">Планы на сезон 10 | 30 | 60 | 90</h2>
     <div class="quotas" id="quotasList"></div>
   </div>
   <div class="collapse-toolbar">
-    <button class="ghost" id="collapseAllBtn">▸ свернуть все</button>
-    <button class="ghost" id="expandAllBtn">▾ развернуть все</button>
+    <button type="button" class="ghost" id="collapseAllBtn">▸ свернуть все</button>
+    <button type="button" class="ghost" id="expandAllBtn">▾ развернуть все</button>
   </div>
   <div id="categoriesView"></div>
 </main>
 
-<footer class="progress">
-  <span class="progress-num" id="progressLabel">0 / 0</span>
-  <div class="bar-wrap"><div class="bar-fill" id="progressBarFill" style="width:0%"></div></div>
+<footer class="progress" aria-label="Прогресс чек-листа">
+  <span class="progress-num" id="progressLabel">0 / 289</span>
+  <progress class="bar-wrap" id="progressBar" max="289" value="0" aria-labelledby="progressLabel"></progress>
   <span class="hint" id="progressPct">0%</span>
 </footer>
 
-<script>
-/* ============================================================
-   ШАБЛОН СЕЗОНА — 
-   Вставь сюда содержимое файла marathon-shablon.json,
-   экспортированного из АДМИН-версии (кнопка "⇩ шаблон").
-   TEMPLATE_VERSION — любая строка; меняй её при каждом обновлении
-   шаблона (например на дату), иначе не подтянутся
-   новые категории/задания — старая версия просто останется как есть.
-   ============================================================ */
-const TEMPLATE_VERSION = '2026-11-22';
-const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
-const CHALLENGE_COMPLETE_THRESHOLD = 10; //  ссылок в одном задании считать "полностью выполненным челленджем"
-
-/* Финальная отправка итогов — один раз, по кнопке, в конце сезона.
-   FINAL_STATS_URL — ссылка на деплой Apps Script (см. отдельный файл скрипта).
-   FINAL_TOKEN —  строка должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
-    */
-const FINAL_STATS_URL = 'https://script.google.com/macros/s/AKfycbyg1sfo8yIEEboD3ISVj-M3svzqKkrtlddFBhba6OpN/dev';
-const FINAL_TOKEN = '365grajnojenpomegranat&10306090@gajnos4ek_lis';
-
-const EMBEDDED_TEMPLATE = {
+<script type="application/json" id="appConfig">
+{
+  "templateVersion": "2026-11-22",
+  "challengeCategoryName": "Челленджи",
+  "challengeCompleteThreshold": 10,
+  "finalStatsEnabled": false,
+  "finalStatsUrl": ""
+}
+</script>
+<script type="application/json" id="templateData">{
   "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
   "coverImage": "https://ic.pics.livejournal.com/fotovivo/19078119/11206812/11206812_original.png",
   "quotas": [
@@ -1264,7 +1302,7 @@ const EMBEDDED_TEMPLATE = {
           "text": "[#яскучаюпо](https://www.livejournal.com/rsearch/?tags=%23%D1%8F%D1%81%D0%BA%D1%83%D1%87%D0%B0%D1%8E%D0%BF%D0%BE&searchArea=post) \n(кому-либо, чему-либо)"
         },
         {
-          "id": "tsgby0gy",
+          "id": "tch0tarj",
           "text": "[#чётаржу!](https://www.livejournal.com/rsearch/?tags=%23%D1%87%D1%91%D1%82%D0%B0%D1%80%D0%B6%D1%83!&searchArea=post))"
         },
         {
@@ -1550,497 +1588,15 @@ const EMBEDDED_TEMPLATE = {
     }
   ]
 }
-/* ============================================================ */
-
-const STORAGE_KEY = 'ljMarathonState_v1';
-
-function loadState(){
-  let state;
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    state = raw ? JSON.parse(raw) : null;
-  }catch(e){ state = null; }
-  if(!state){
-    state = {
-      title: EMBEDDED_TEMPLATE.title, coverImage: EMBEDDED_TEMPLATE.coverImage || '',
-      quotas: EMBEDDED_TEMPLATE.quotas, categories: EMBEDDED_TEMPLATE.categories,
-      templateVersion: TEMPLATE_VERSION,
-      progress: { quotaTargets:{}, tasks:{}, collapsed:{} }
-    };
-  }
-  if(!state.progress) state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
-  if(!state.progress.collapsed) state.progress.collapsed = {};
-  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
-  if(!state.settings) state.settings = {nick:''};
-  if(state.templateVersion !== TEMPLATE_VERSION){
-    // подтянули новую версию шаблона; личный прогресс (по id заданий) не трогаем
-    state.title = EMBEDDED_TEMPLATE.title;
-    state.coverImage = EMBEDDED_TEMPLATE.coverImage || '';
-    state.quotas = EMBEDDED_TEMPLATE.quotas;
-    state.categories = EMBEDDED_TEMPLATE.categories;
-    state.templateVersion = TEMPLATE_VERSION;
-  }
-  return state;
-}
-
-let state = loadState();
-let sendingFinal = false;
-
-function findTask(id){
-  for(const cat of state.categories){
-    const task = cat.tasks.find(t=>t.id===id);
-    if(task) return {cat, task};
-  }
-  return null;
-}
-
-function isLikelyUrl(s){
-  const v = (s||'').trim();
-  if(!v || /\s/.test(v)) return false;
-  return /^https?:\/\/[^\s]+\.[^\s]+/i.test(v);
-}
-function isDuplicateLink(taskId, idx, val){
-  for(const tid in state.progress.tasks){
-    const ts = state.progress.tasks[tid];
-    if(!ts || !ts.links) continue;
-    for(let i=0;i<ts.links.length;i++){
-      if(tid===taskId && i===idx) continue;
-      if(ts.links[i].trim() === val) return true;
-    }
-  }
-  return false;
-}
-
-function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
-
-function getTaskState(id){
-  if(!state.progress.tasks[id]) state.progress.tasks[id] = {checked:false, links:[''], marks:{liked:false}};
-  const t = state.progress.tasks[id];
-  if(!t.marks) t.marks = {liked:false};
-  return t;
-}
-
-function countDoneForQuota(){
-  return Object.values(state.progress.tasks).filter(t=>t.checked).length;
-}
-
-function renderProgress(){
-  const total = state.categories.reduce((s,c)=>s+c.tasks.length,0);
-  const done = countDoneForQuota();
-  const pct = total ? Math.round(done/total*100) : 0;
-  document.getElementById('progressLabel').textContent = `${done} / ${total}`;
-  document.getElementById('progressBarFill').style.width = pct+'%';
-  document.getElementById('progressPct').textContent = pct+'%';
-}
-
-/* Локальный подсчёт статистики — без сети, из того же state,
-   тем же фильтром isLikelyUrl, что используется для подсветки "плохих" ссылок. */
-function renderLocalStats(){
-  const statsListEl = document.getElementById('statsList');
-  if(!statsListEl) return;
-  let totalLinks = 0, challengeLinks = 0, completedChallenges = 0;
-  state.categories.forEach(cat=>{
-    const isChallenge = (cat.name||'').trim().toLowerCase() === CHALLENGE_CATEGORY_NAME.toLowerCase();
-    cat.tasks.forEach(t=>{
-      const ts = state.progress.tasks[t.id];
-      if(!ts || !ts.links) return;
-      const count = ts.links.filter(isLikelyUrl).length;
-      totalLinks += count;
-      if(isChallenge){
-        challengeLinks += count;
-        if(count > 0 && count % CHALLENGE_COMPLETE_THRESHOLD === 0) completedChallenges++;
-      }
-    });
-  });
-  statsListEl.innerHTML = `
-    <div style="display:flex; flex-direction:column; gap:8px;">
-      <div> <b>Всего выполнено: <span class="mono">${totalLinks}</span> | </b> <b> Из них в «Челленджах»: <span class="mono">${challengeLinks}</span> | </b> <b> Выполнено челленджей: <span class="mono">${completedChallenges}</span></b></div>
-	  </div>
-  `;
-}
-
-function collectFinalRows(){
-  const rows = [];
-  state.categories.forEach(cat=>{
-    cat.tasks.forEach(t=>{
-      const ts = state.progress.tasks[t.id];
-      if(!ts || !ts.links) return;
-      const count = ts.links.filter(isLikelyUrl).length;
-      if(count > 0){
-        rows.push({
-          category: cat.name,
-          task: t.text.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*\*/g,''),
-          taskId: t.id,
-          count
-        });
-      }
-    });
-  });
-  return rows;
-}
-
-async function sendFinalStats(){
-  if(sendingFinal) return;
-  if(state.progress.finalSent){
-    const prev = new Date(state.progress.finalSent.ts).toLocaleString('ru-RU');
-    if(!confirm(`Итоги уже отправлялись ${prev} (строк: ${state.progress.finalSent.rows}). Отправить ещё раз?`)) return;
-  }
-  const rows = collectFinalRows();
-  if(!rows.length){
-    alert('Пока нет ни одной введённой ссылки — отправлять нечего.');
-    return;
-  }
-  sendingFinal = true;
-  const statusEl = document.getElementById('finalSendStatus');
-  const btn = document.getElementById('sendFinalBtn');
-  btn.disabled = true;
-  statusEl.textContent = 'отправляю…';
-  const payload = {
-    type: 'final',
-    token: FINAL_TOKEN,
-    nick: state.settings.nick || 'аноним',
-    ts: new Date().toISOString(),
-    rows
-  };
-  try{
-    const res = await fetch(FINAL_STATS_URL, {
-      method: 'POST',
-      headers: {'Content-Type': 'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload)
-    });
-    const data = await res.json();
-    if(data && data.ok){
-      state.progress.finalSent = {ts: payload.ts, rows: rows.length};
-      save();
-      statusEl.textContent = `✓ отправлено: ${rows.length} строк, ${new Date(payload.ts).toLocaleString('ru-RU')}`;
-    } else {
-      statusEl.textContent = '✗ сервер отклонил запрос' + (data && data.reason ? ' (' + data.reason + ')' : '');
-    }
-  }catch(err){
-    statusEl.textContent = '✗ не удалось отправить — нет связи или таблица ещё не готова. Можно попробовать ещё раз позже.';
-  }finally{
-    sendingFinal = false;
-    btn.disabled = false;
-  }
-}
-
-function renderMarathon(){
-  
-  const active = document.activeElement;
-  let restoreSelector = null, selStart = null, selEnd = null;
-  const catViewEl = document.getElementById('categoriesView');
-  if(active && catViewEl && catViewEl.contains(active) && active.dataset){
-    const key = Object.keys(active.dataset)[0];
-    if(key){ restoreSelector = `[data-${key}="${CSS.escape(active.dataset[key])}"]`; }
-    if(typeof active.selectionStart === 'number'){ selStart = active.selectionStart; selEnd = active.selectionEnd; }
-  }
-  const scrollY = window.scrollY;
-
-  document.getElementById('marathonTitle').textContent = '🦊 ' + (state.title || 'Марафон ЖЖ');
-  document.getElementById('nickInput').value = state.settings.nick || '';
-  renderCover();
-  renderLocalStats();
-
-  if(!sendingFinal){
-    const finalStatusEl = document.getElementById('finalSendStatus');
-    if(finalStatusEl){
-      finalStatusEl.textContent = state.progress.finalSent
-        ? `✓ последняя отправка: ${new Date(state.progress.finalSent.ts).toLocaleString('ru-RU')}, строк: ${state.progress.finalSent.rows}`
-        : '';
-    }
-  }
-
-  const qEl = document.getElementById('quotasList');
-  qEl.innerHTML = state.quotas.map(q=>{
-    const target = state.progress.quotaTargets[q.id] ?? '';
-    return `<div class="quota">
-      <div class="label">${escHtml(q.label)}</div>
-      <div class="set">
-        <input type="number" min="0" placeholder="N" value="${target}" data-quota="${q.id}">
-        <span class="hint">${escHtml(q.unit)}</span>
-      </div>
-    </div>`;
-  }).join('') || '<div class="empty">квоты не заданы</div>';
-
-  const cEl = document.getElementById('categoriesView');
-  cEl.innerHTML = state.categories.map(cat=>{
-    const collapsed = !!state.progress.collapsed[cat.id];
-    return `
-    <div class="card ${collapsed?'collapsed':''}">
-      <div class="cat-header">
-        <div class="row" style="gap:6px;">
-          <button class="cat-toggle" data-toggle="${cat.id}">${collapsed?'▸':'▾'}</button>
-          <h3>${escHtml(cat.name)}</h3>
-        </div>
-        <span class="hint mono">${cat.tasks.filter(t=>getTaskState(t.id).checked).length} / ${cat.tasks.length}</span>
-      </div>
-      <div class="cat-body">
-        ${cat.desc && cat.desc.trim() ? `<div class="cat-desc">${formatTaskText(cat.desc)}</div>` : ''}
-        <div class="task-grid">
-          ${cat.tasks.map((t,idx)=>{
-  const ts = getTaskState(t.id);
-  return `<div class="task-card ${ts.checked?'done':''}">
-    <div class="task-card-inner">
-      <label>
-        <input type="checkbox" ${ts.checked?'checked':''} data-check="${t.id}">
-        <span><span class="task-num">${idx+1}.</span> ${formatTaskText(t.text)}</span>
-      </label>
-                <div class="task-marks">
-                  <button type="button" class="mark-btn ${ts.marks.liked?'on':''}" data-mark="${t.id}|liked" title="Понравилось">♥</button>
-                </div>
-                ${ts.checked ? `<div class="links">
-                ${ts.links.map((v,i)=>{
-                  const val = v.trim();
-                  const bad = val && !isLikelyUrl(val);
-                  const dup = val && !bad && isDuplicateLink(t.id, i, val);
-                  return `<div class="link-field">
-                    <div class="link-row">
-                      <span class="link-num">${i+1}.</span>
-                      <input type="text" class="${(bad||dup)?'link-bad':''}" placeholder="ссылка на пост" value="${escAttr(v)}" data-link="${t.id}|${i}">
-                    </div>
-                    ${bad ? '<span class="link-warn">⚠ это не похоже на ссылку</span>' : ''}
-                    ${dup ? '<span class="link-warn">⚠ такая ссылка уже есть в чек-листе</span>' : ''}
-                  </div>`;
-                }).join('')}
-                </div>` : ''}
-              </div>
-            </div>`;
-          }).join('')}
-        </div>
-      </div>
-    </div>
-  `;
-  }).join('') || '<div class="empty">категории не заданы</div>';
-
-  save();
-  renderProgress();
-
-  if(restoreSelector){
-    const el = document.querySelector(restoreSelector);
-    if(el){
-      el.focus({preventScroll:true});
-      if(selStart!=null && el.setSelectionRange){ try{ el.setSelectionRange(selStart, selEnd); }catch(e){} }
-    }
-  }
-  window.scrollTo(0, scrollY);
-}
-
-function renderCover(){
-  const wrap = document.getElementById('coverImageWrap');
-  const img = document.getElementById('coverImageImg');
-  const url = (state.coverImage || '').trim();
-  if(url){
-    img.onerror = ()=>{ wrap.style.display = 'none'; };
-    img.src = url;
-    wrap.style.display = 'block';
-  } else {
-    wrap.style.display = 'none';
-  }
-}
-
-document.getElementById('nickInput').addEventListener('input', e=>{ state.settings.nick = e.target.value; save(); });
-document.getElementById('sendFinalBtn').addEventListener('click', sendFinalStats);
-
-document.getElementById('quotasList').addEventListener('input', e=>{
-  if(e.target.dataset.quota){
-    state.progress.quotaTargets[e.target.dataset.quota] = e.target.value;
-    save();
-  }
-});
-
-function celebrate(message, emojis, count){
-  let layer = document.getElementById('celebrateLayer');
-  if(!layer){
-    layer = document.createElement('div');
-    layer.id = 'celebrateLayer';
-    document.body.appendChild(layer);
-  }
-  const msg = document.createElement('div');
-  msg.className = 'celebrate-msg';
-  msg.textContent = message;
-  layer.appendChild(msg);
-  setTimeout(()=>msg.remove(), 2700);
-
-  for(let i=0;i<count;i++){
-    const p = document.createElement('span');
-    p.className = 'celebrate-particle';
-    p.textContent = emojis[Math.floor(Math.random()*emojis.length)];
-    p.style.left = Math.random()*100 + 'vw';
-    const duration = 1.6 + Math.random()*1.2;
-    const delay = Math.random()*0.6;
-    p.style.animationDuration = duration+'s';
-    p.style.animationDelay = delay+'s';
-    layer.appendChild(p);
-    setTimeout(()=>p.remove(), (duration+delay+0.3)*1000);
-  }
-}
-
-function checkTaskLinkMilestone(taskId){
-  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
-  if(!state.progress.milestones.tasks) state.progress.milestones.tasks = {};
-
-  const ts = getTaskState(taskId);
-  const validCount = ts.links.filter(isLikelyUrl).length;
-
-  if(validCount > 0 && validCount % CHALLENGE_COMPLETE_THRESHOLD === 0 && validCount > (state.progress.milestones.tasks[taskId]||0)){
-    state.progress.milestones.tasks[taskId] = validCount;
-    const found = findTask(taskId);
-    const label = found ? found.task.text.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*\*/g,'') : 'задание';
-    celebrate(`«${label}» — ${validCount} ссылок в одном задании! 🎆`, ['💖','✨','🍁','🍩'], 28);
-  }
-  save();
-}
-
-function checkGlobalLinkMilestone(){
-  if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
-
-  const totalLinks = Object.values(state.progress.tasks)
-    .reduce((sum,t) => sum + (t.links ? t.links.filter(v => isLikelyUrl(v)).length : 0), 0);
-
-  if(totalLinks > 0 && totalLinks % CHALLENGE_COMPLETE_THRESHOLD === 0 && totalLinks > state.progress.milestones.global){
-    state.progress.milestones.global = totalLinks;
-    celebrate(`Респект! Уже ${totalLinks} 🍬`, ['🍬','🍭','🍰'], 16);
-  }
-  save();
-}
-
-document.getElementById('categoriesView').addEventListener('change', e=>{
-  if(e.target.dataset.check){
-    const id = e.target.dataset.check;
-    const ts = getTaskState(id);
-    ts.checked = e.target.checked;
-    if(ts.checked && ts.links.length===0) ts.links=[''];
-    save(); renderMarathon();
-  }
-});
-document.getElementById('categoriesView').addEventListener('input', e=>{
-  if(e.target.dataset.link){
-    const [id, idxStr] = e.target.dataset.link.split('|');
-    const idx = parseInt(idxStr,10);
-    const ts = getTaskState(id);
-    ts.links[idx] = e.target.value;
-    if(idx === ts.links.length-1 && e.target.value.trim()!==''){
-      ts.links.push('');
-      save();
-      checkGlobalLinkMilestone();
-      renderMarathon();
-    } else {
-      save();
-      checkGlobalLinkMilestone();
-    }
-  }
-});
-document.getElementById('categoriesView').addEventListener('keydown', e=>{
-  if(e.key === 'Enter' && e.target.dataset.link){
-    e.preventDefault();
-    e.target.blur();
-  }
-});
-document.getElementById('categoriesView').addEventListener('focusout', e=>{
-  if(e.target.dataset.link){
-    const [id, idxStr] = e.target.dataset.link.split('|');
-    const idx = parseInt(idxStr,10);
-    const val = e.target.value.trim();
-    if(!val) return;
-    const bad = !isLikelyUrl(val);
-    const dup = !bad && isDuplicateLink(id, idx, val);
-    if(bad || dup){
-      renderMarathon();
-      return; // некорректная или повторная ссылка — в статистику не идёт
-    }
-    checkTaskLinkMilestone(id);
-    checkGlobalLinkMilestone();
-    renderMarathon();
-  }
-});
-document.getElementById('categoriesView').addEventListener('click', e=>{
-  const toggleBtn = e.target.closest('[data-toggle]');
-  if(toggleBtn){
-    const id = toggleBtn.dataset.toggle;
-    const collapsed = !state.progress.collapsed[id];
-    state.progress.collapsed[id] = collapsed;
-    save();
-    const card = toggleBtn.closest('.card');
-    card.classList.toggle('collapsed', collapsed);
-    toggleBtn.textContent = collapsed ? '▸' : '▾';
-    return;
-  }
-  const markBtn = e.target.closest('[data-mark]');
-  if(markBtn){
-    const [id, key] = markBtn.dataset.mark.split('|');
-    const ts = getTaskState(id);
-    ts.marks[key] = !ts.marks[key];
-    save();
-    markBtn.classList.toggle('on', ts.marks[key]);
-  }
-});
-document.getElementById('collapseAllBtn').addEventListener('click', ()=>{
-  state.categories.forEach(c=>{ state.progress.collapsed[c.id] = true; });
-  save();
-  document.querySelectorAll('#categoriesView .card').forEach(card=>card.classList.add('collapsed'));
-  document.querySelectorAll('#categoriesView .cat-toggle').forEach(b=>b.textContent='▸');
-});
-document.getElementById('expandAllBtn').addEventListener('click', ()=>{
-  state.categories.forEach(c=>{ state.progress.collapsed[c.id] = false; });
-  save();
-  document.querySelectorAll('#categoriesView .card').forEach(card=>card.classList.remove('collapsed'));
-  document.querySelectorAll('#categoriesView .cat-toggle').forEach(b=>b.textContent='▾');
-});
-
-function download(filename, obj){
-  const blob = new Blob([JSON.stringify(obj,null,2)], {type:'application/json'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = filename;
-  a.click();
-}
-document.getElementById('exportFull').addEventListener('click', ()=>{
-  download('marathon-progress.json', state);
-});
-document.getElementById('importFullBtn').addEventListener('click', ()=>document.getElementById('fileInputFull').click());
-document.getElementById('resetAllBtn').addEventListener('click', ()=>{
-  if(!confirm('Точно стереть весь ваш прогресс — все галочки, ссылки и цели на сезон? Список заданий останется, отменить сброс нельзя.')) return;
-  state.progress = {quotaTargets:{}, tasks:{}, collapsed:{}};
-  save();
-  renderMarathon();
-});
-document.getElementById('fileInputFull').addEventListener('change', e=>{
-  const f = e.target.files[0]; if(!f) return;
-  const r = new FileReader();
-  r.onload = ()=>{
-    try{
-      state = JSON.parse(r.result);
-      if(!state.progress) state.progress={quotaTargets:{}, tasks:{}, collapsed:{}};
-      if(!state.progress.collapsed) state.progress.collapsed = {};
-      if(!state.progress.milestones) state.progress.milestones = {global:0, cats:{}, tasks:{}};
-      if(!state.settings) state.settings={nick:''};
-      save(); renderMarathon();
-    }catch(err){ alert('Не удалось прочитать сохраненный файл'); }
-  };
-  r.readAsText(f);
-});
-
-function escHtml(s){ return (s||'').replace(/[&<>]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-function formatTaskText(s){
-  let out = escHtml(s);
-  out = out.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, (m, text, url)=>{
-    const cls = text.trim().startsWith('#') ? ' class="tag-link"' : '';
-    return `<a href="${url}" target="_blank" rel="noopener noreferrer"${cls}>${text}</a>`;
-  });
-  out = out.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
-  return out;
-}
-function escAttr(s){ return (s||'').replace(/"/g,'&quot;'); }
-
-renderMarathon();
 </script>
+<script src="checklist.js" defer></script>
 
-<div class="typo-strip">
+<aside class="typo-strip" aria-label="Связь с 4ek-lis">
   <div class="typo-row">
     <span class="typo-label">Заметили опечатку или есть вопрос?</span>
     <a class="ghost" href="https://4ek-lis.livejournal.com/" target="_blank" rel="noopener noreferrer">Напишите в ЖЖ →</a>
   </div>
-</div>
+</aside>
 
 </body>
 </html>
