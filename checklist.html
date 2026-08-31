@@ -188,7 +188,7 @@
    шаблона (например на дату), иначе не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-11-23';
+const TEMPLATE_VERSION = '2026-11-22';
 const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
 const CHALLENGE_COMPLETE_THRESHOLD = 10; //  ссылок в одном задании считать "полностью выполненным челленджем"
 
@@ -1654,9 +1654,8 @@ function renderLocalStats(){
   });
   statsListEl.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <div> <b>Всего выполнено: <span class="mono">${totalLinks}</span> | </b> <b> Из них в «Челленджах»: <span class="mono">${challengeLinks}</span></div>
-      | </b> <b> Выполнено челленджей:</b> (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</span></div>
-    </div>
+      <div> <b>Всего выполнено: <span class="mono">${totalLinks}</span> | </b> <b> Из них в «Челленджах»: <span class="mono">${challengeLinks}</span> | </b> <b> Выполнено челленджей: <span class="mono">${completedChallenges}</span></b></div>
+	  </div>
   `;
 }
 
@@ -1900,7 +1899,7 @@ function checkGlobalLinkMilestone(){
 
   if(totalLinks > 0 && totalLinks % CHALLENGE_COMPLETE_THRESHOLD === 0 && totalLinks > state.progress.milestones.global){
     state.progress.milestones.global = totalLinks;
-    celebrate(`Респект! Уже ${totalLinks} 🍬`, ['🍬','🍭','🍫'], 16);
+    celebrate(`Респект! Уже ${totalLinks} 🍬`, ['🍬','🍭','🍰'], 16);
   }
   save();
 }
