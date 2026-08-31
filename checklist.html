@@ -188,7 +188,7 @@
    шаблона (например на дату), иначе не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-11-25';
+const TEMPLATE_VERSION = '2026-11-24';
 const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
 const CHALLENGE_COMPLETE_THRESHOLD = 10; //  ссылок в одном задании считать "полностью выполненным челленджем"
 
@@ -1654,9 +1654,8 @@ function renderLocalStats(){
   });
   statsListEl.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <div>🔗 <b>Всего ссылок в чек-листе:</b> <span class="mono">${totalLinks}</span></div>
-      <div>🎯 <b>Из них в «Челленджах»:</b> <span class="mono">${challengeLinks}</span></div>
-      <div>🏆 <b>Полностью выполненных челленджей</b> (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</span></div>
+      <div> <b>Всего выполнено: <span class="mono">${totalLinks}</span> | </b> <b> Из них в «Челленджах»: <span class="mono">${challengeLinks}</span></div>
+      | </b> <b> Выполнено челленджей:</b> (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</span></div>
     </div>
   `;
 }
@@ -1888,7 +1887,7 @@ function checkTaskLinkMilestone(taskId){
     state.progress.milestones.tasks[taskId] = validCount;
     const found = findTask(taskId);
     const label = found ? found.task.text.replace(/\[([^\]]+)\]\([^)]+\)/g,'$1').replace(/\*\*/g,'') : 'задание';
-    celebrate(`«${label}» — ${validCount} ссылок в одном задании! 🎆`, ['🏆','✨','🎆','🎉'], 28);
+    celebrate(`«${label}» — ${validCount} ссылок в одном задании! 🎆`, ['💖','✨','🍁','🍩'], 28);
   }
   save();
 }
@@ -2040,7 +2039,7 @@ renderMarathon();
 <div class="typo-strip">
   <div class="typo-row">
     <span class="typo-label">Заметили опечатку или есть вопрос?</span>
-    <a class="ghost" href="https://4ek-lis.livejournal.com/34239.html" target="_blank" rel="noopener noreferrer">Напишите в ЖЖ →</a>
+    <a class="ghost" href="https://4ek-lis.livejournal.com/" target="_blank" rel="noopener noreferrer">Напишите в ЖЖ →</a>
   </div>
 </div>
 
