@@ -134,21 +134,26 @@
 <div id="announceBlock" style="width:100%; box-sizing:border-box;">
   <!-- ЗДЕСЬ МОЖНО ВСТАВИТЬ СВОЙ HTML-БЛОК ВО ВСЮ ШИРИНУ СТРАНИЦЫ.
        Контейнер уже растянут на 100% ширины — просто пишите внутри
-       обычные теги (p, img, table и т.п.), без вёрстки.
+       обычные теги (p, img, table и т.п.), как раньше, без вёрстки.
        Пусто — ничего не отображается. -->
 </div>
+
+
+<div id="coverImageWrap" style="display:none;"><img id="coverImageImg" alt=""></div>
 
 <main>
   <div class="card" id="syncCard">
     <div class="row">
       <div>
-        <label class="hint" style="display:block;">Имя пользователя</label>
+        <label class="hint" style="display:block;">Ник (для итоговой отправки)</label>
         <input type="text" id="nickInput" style="width:220px;">
       </div>
     </div>
-    <div class="hint" style="margin-top:6px;">Нажмёте кнопку «Отправить итоги сезона»</div>
+    <div class="hint" style="margin-top:6px;">«Отправить итоги сезона»</div>
   </div>
-  <!-- Блок статистики и кнопки финальной отправки за атрибутом hidden — -->
+  <!-- Блок статистики и кнопки финальной отправки спрятан атрибутом hidden —
+       весь JS продолжает работать в фоне как обычно, просто не рисуется на экране.
+       Чтобы открыть блок в конце сезона: сотри слово hidden из тега ниже (и только его). -->
   <div class="card" id="statsCard" hidden>
     <h3 style="margin-bottom:10px;">Статистика</h3>
     <div id="statsList" class="hint">—</div>
@@ -176,24 +181,24 @@
 
 <script>
 /* ============================================================
-   ШАБЛОН СЕЗОНА 
+   ШАБЛОН СЕЗОНА — единственное место, которое меняется вручную.
    Вставь сюда содержимое файла marathon-shablon.json,
    экспортированного из АДМИН-версии (кнопка "⇩ шаблон").
    TEMPLATE_VERSION — любая строка; меняй её при каждом обновлении
-   шаблона (например на дату), иначе не подтянутся
+   шаблона (например на дату), иначе у участниц не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-11-30';
+const TEMPLATE_VERSION = '2026-09-03';
+const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории, которая считается "челленджами" в сводке статистики
+const CHALLENGE_COMPLETE_THRESHOLD = 10; // сколько ссылок в одном задании считать "полностью выполненным челленджем"
 
-const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
-const CHALLENGE_COMPLETE_THRESHOLD = 10; // ссылок в одном задании считать "полностью выполненным челленджем"
-
-/* Финальная отправка итогов — один раз.
-   FINAL_STATS_URL — ссылка на деплой Apps Script.
-   FINAL_TOKEN — с. строка, должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
-    */
-const FINAL_STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
-const FINAL_TOKEN = '365grajnojenpomegranat&10306090@gajnos4ek_lis';
+/* Финальная отправка итогов — один раз, по кнопке, в конце сезона.
+   FINAL_STATS_URL — ссылка на деплой Apps Script (см. отдельный файл скрипта).
+   FINAL_TOKEN — секретная строка, должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
+   Это не защита от целенаправленной атаки (то и другое видно в исходниках),
+   а просто фильтр от случайного мусора автоматических сканеров. */
+const FINAL_STATS_URL = 'https://script.google.com/macros/s/ВСТАВЬТЕ_СЮДА_ID_ДЕПЛОЯ/exec';
+const FINAL_TOKEN = 'ВСТАВЬТЕ_СЮДА_СВОЙ_СЕКРЕТ';
 
 const EMBEDDED_TEMPLATE = {
   "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
@@ -1650,7 +1655,9 @@ function renderLocalStats(){
   });
   statsListEl.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:8px;">
-      <div><b>Всего выполненно:  <span class="mono">${totalLinks} </b> </span> | <b> Из них в «Челленджах»:  <span class="mono">${challengeLinks} </b> </span> | <b> Полностью выполнено челленджей (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</b></span></div>
+      <div>🔗 <b>Всего ссылок в чек-листе:</b> <span class="mono">${totalLinks}</span></div>
+      <div>🎯 <b>Из них в «Челленджах»:</b> <span class="mono">${challengeLinks}</span></div>
+      <div>🏆 <b>Полностью выполненных челленджей</b> (кратно ${CHALLENGE_COMPLETE_THRESHOLD}): <span class="mono">${completedChallenges}</span></div>
     </div>
   `;
 }
@@ -2034,7 +2041,7 @@ renderMarathon();
 <div class="typo-strip">
   <div class="typo-row">
     <span class="typo-label">Заметили опечатку или есть вопрос?</span>
-    <a class="ghost" href="https://4ek-lis.livejournal.com/34239.html" target="_blank" rel="noopener noreferrer">Напишите в ЖЖ →</a>
+    <a class="ghost" href="https://fotovivo.livejournal.com/" target="_blank" rel="noopener noreferrer">Напишите в ЖЖ →</a>
   </div>
 </div>
 
