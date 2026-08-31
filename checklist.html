@@ -134,28 +134,26 @@
 <div id="announceBlock" style="width:100%; box-sizing:border-box;">
   <!-- ЗДЕСЬ МОЖНО ВСТАВИТЬ СВОЙ HTML-БЛОК ВО ВСЮ ШИРИНУ СТРАНИЦЫ.
        Контейнер уже растянут на 100% ширины — просто пишите внутри
-       обычные теги (p, img, table и т.п.), как раньше, без вёрстки.
+       обычные теги (p, img, table и т.п.), без вёрстки.
        Пусто — ничего не отображается. -->
 </div>
-
-
-<div id="coverImageWrap" style="display:none;"><img id="coverImageImg" alt=""></div>
 
 <main>
   <div class="card" id="syncCard">
     <div class="row">
       <div>
-        <label class="hint" style="display:block;">Имя пользоваталя</label>
+        <label class="hint" style="display:block;">Имя пользователя</label>
         <input type="text" id="nickInput" style="width:220px;">
       </div>
     </div>
-    <div class="hint" style="margin-top:6px;"></div>
+    <div class="hint" style="margin-top:6px;">Нажмёте кнопку «Отправить итоги сезона»</div>
   </div>
-  <div class="card" id="statsCard">
+  <!-- Блок статистики и кнопки финальной отправки за атрибутом hidden — -->
+  <div class="card" id="statsCard" hidden>
     <h3 style="margin-bottom:10px;">Статистика</h3>
     <div id="statsList" class="hint">—</div>
     <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
-      <button class="ghost" id="sendFinalBtn">📤 Отправить итоги (в конце сезона)</button>
+      <button class="ghost" id="sendFinalBtn">📤 Отправить итоги сезона</button>
       <div class="hint" id="finalSendStatus" style="margin-top:6px;"></div>
     </div>
   </div>
@@ -178,14 +176,15 @@
 
 <script>
 /* ============================================================
-   ШАБЛОН СЕЗОНА — единственное место, которое меняется вручную.
+   ШАБЛОН СЕЗОНА 
    Вставь сюда содержимое файла marathon-shablon.json,
    экспортированного из АДМИН-версии (кнопка "⇩ шаблон").
    TEMPLATE_VERSION — любая строка; меняй её при каждом обновлении
-   шаблона (например на дату), иначе у участниц не подтянутся
+   шаблона (например на дату), иначе не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-08-19';
+const TEMPLATE_VERSION = '2026-11-30';
+
 const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
 const CHALLENGE_COMPLETE_THRESHOLD = 10; // ссылок в одном задании считать "полностью выполненным челленджем"
 
@@ -194,7 +193,7 @@ const CHALLENGE_COMPLETE_THRESHOLD = 10; // ссылок в одном зада�
    FINAL_TOKEN — с. строка, должна СОВПАДАТЬ с FINAL_TOKEN в скрипте.
     */
 const FINAL_STATS_URL = 'https://script.google.com/macros/s/AKfycbxju6TOj4YzbKrjjAuJcBICzhQoXxjIl1kORHOQOlf2Q6W0x1VE7S49yWIatUBKrfoRVA/exec';
-const FINAL_TOKEN = 'ВСТАВЬТЕ_СЮДА_СВОЙ_Токен';
+const FINAL_TOKEN = '365grajnojenpomegranat&10306090@gajnos4ek_lis';
 
 const EMBEDDED_TEMPLATE = {
   "title": "#НЕСКУЧНАЯОСЕНЬ. Чек-лист от 4ek-Lisa",
