@@ -154,10 +154,10 @@
   </div>
   <!-- Блок статистики и кнопки финальной отправки за атрибутом hidden.
        в конце сезона убрать  hidden . -->
-  <div class="card" id="statsCard" hidden>
+  <div class="card" id="statsCard" >
     <h3 style="margin-bottom:10px;">Статистика</h3>
     <div id="statsList" class="hint">—</div>
-    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line);">
+    <div style="margin-top:14px; padding-top:14px; border-top:1px solid var(--line); hidden">
       <button class="ghost" id="sendFinalBtn">📤 Отправить итоги сезона</button>
       <div class="hint" id="finalSendStatus" style="margin-top:6px;"></div>
     </div>
@@ -188,7 +188,7 @@
    шаблона (например на дату), иначе не подтянутся
    новые категории/задания — старая версия просто останется как есть.
    ============================================================ */
-const TEMPLATE_VERSION = '2026-11-24';
+const TEMPLATE_VERSION = '2026-11-23';
 const CHALLENGE_CATEGORY_NAME = 'Челленджи'; // название категории
 const CHALLENGE_COMPLETE_THRESHOLD = 10; //  ссылок в одном задании считать "полностью выполненным челленджем"
 
