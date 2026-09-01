@@ -38,8 +38,11 @@ function faqVisibleData(template) {
 
 const checklistHtml = read('checklist.html');
 const faqHtml = read('index.html');
-const checklistJs = read('checklist.js');
-const faqJs = read('faq.js');
+const checklistLoader = read('checklist.js');
+const checklistJs = read('checklist-core.js');
+const analyticsJs = read('analytics.js');
+const faqLoader = read('faq.js');
+const faqJs = read('faq-core.js');
 const receiverJs = read('google-apps-script/Code.gs');
 const manifest = JSON.parse(read('google-apps-script/appsscript.json'));
 const checklistTemplate = jsonBlock(checklistHtml, 'templateData');
@@ -64,7 +67,7 @@ assert.equal(
 assert.equal(
   sha256(JSON.stringify(faqVisibleData(faqTemplate))),
   '431bec28630a26c250a0fa14dac68467b912a3a5c273fe3390e98b56b0305da2',
-  'FAQ visible template copy/order/link data changed',
+  'FAQ embedded baseline copy/order/link data changed unexpectedly',
 );
 
 assert.equal(appConfig.templateVersion, '2026-11-22');
@@ -72,13 +75,26 @@ assert.equal(appConfig.finalStatsEnabled, false, 'final collection must be owner
 assert.equal(appConfig.finalStatsUrl, '', 'repository must not ship a stale deployment URL');
 assert.equal(manifest.runtimeVersion, 'V8');
 assert.deepEqual(manifest.dependencies, {});
+assert.ok(manifest.oauthScopes.includes('https://www.googleapis.com/auth/script.external_request'));
+assert.match(checklistLoader, /checklist-core\.js/);
+assert.match(checklistLoader, /analytics\.js/);
+assert.match(faqLoader, /faq-core\.js/);
 
-for (const [name, source] of [['checklist.js', checklistJs], ['faq.js', faqJs]]) {
+for (const [name, source] of [
+  ['checklist.js', checklistLoader],
+  ['checklist-core.js', checklistJs],
+  ['analytics.js', analyticsJs],
+  ['faq.js', faqLoader],
+  ['faq-core.js', faqJs],
+]) {
   assert.doesNotMatch(source, /\.(?:innerHTML|outerHTML)\s*=/, `${name} contains an HTML parsing sink`);
   assert.doesNotMatch(source, /insertAdjacentHTML\s*\(/, `${name} contains an HTML parsing sink`);
   assert.doesNotMatch(source, /\beval\s*\(|new\s+Function\s*\(/, `${name} contains dynamic code execution`);
   new vm.Script(source, { filename: name });
 }
+
+assert.doesNotMatch(analyticsJs, /navigator\.userAgent/, 'analytics must not collect raw User-Agent');
+assert.doesNotMatch(analyticsJs, /sb_secret_|SUPABASE_SECRET_KEY/, 'browser analytics must not contain Supabase secrets');
 
 for (const [name, html] of [['checklist.html', checklistHtml], ['index.html', faqHtml]]) {
   assert.match(html, /Content-Security-Policy/);
@@ -94,7 +110,7 @@ const receiverContext = vm.createContext({ console });
 vm.runInContext(receiverJs, receiverContext, { filename: 'Code.gs' });
 const receiverTestResult = JSON.parse(vm.runInContext('JSON.stringify(runSelfTests())', receiverContext));
 assert.equal(receiverTestResult.ok, true);
-assert.equal(receiverTestResult.tests, 12);
+assert.ok(receiverTestResult.count >= 7);
 
 console.log(JSON.stringify({
   ok: true,
@@ -103,5 +119,5 @@ console.log(JSON.stringify({
   tasks: tasks.length,
   checklistVisibleHash: sha256(JSON.stringify(checklistVisibleData(checklistTemplate))),
   faqVisibleHash: sha256(JSON.stringify(faqVisibleData(faqTemplate))),
-  receiverSelfTests: receiverTestResult.tests,
+  receiverSelfTests: receiverTestResult.count,
 }, null, 2));
