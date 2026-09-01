@@ -1,651 +1,817 @@
-# 4ek-lis — hardened bilingual edition
+# 4ek-lis — hardened GitHub Pages checklist + secure analytics
 
-> **English** below · **Русская версия** во второй половине документа.
+> **English:** [jump to English](#english) · **Русский:** [перейти к русской версии](#русский)
+>
+> Fork: `mishka23x/4ek-lis` · Upstream: `365grain/4ek-lis`
+>
+> This fork is intentionally maintained separately from the upstream owner's live repository. The hardening and analytics work described here is merged into the fork's `main`; it does **not** modify `365grain/4ek-lis:main`.
 
-This branch is a security/accessibility/performance/analytics remediation of the original static LiveJournal marathon checklist. It remains compatible with **GitHub Pages**, ordinary static hosting, **Google Apps Script + Google Sheets**, and now an optional **Supabase PostgreSQL** analytics store.
-
-- Upstream: `365grain/4ek-lis:main`
-- Fork: `mishka23x/4ek-lis`
-- Remediation branch: `codex/ui-a11y-security-performance-hardening-20260831`
-- Upstream production `main` is not modified by this branch.
+For the full chronological installation/configuration procedure, use **[`SETUP-GUIDE.md`](SETUP-GUIDE.md)**.
 
 ---
+
+<a id="english"></a>
 
 # English
 
-## Purpose
+## What this project is
 
-4ek-lis is a browser-based organizer for LiveJournal seasonal marathons, hashtags, writing prompts and challenges. It requires no account or application server for normal use.
+**4ek-lis** is a dependency-free static web organizer for LiveJournal seasonal marathons, hashtags, writing prompts and challenges. The normal user experience runs entirely in the browser and remains compatible with **GitHub Pages** and ordinary static hosting.
 
-Users can:
+The checklist currently provides:
 
-- browse 21 categories / 289 tasks;
-- set 8 seasonal goals/quotas;
-- check tasks off;
-- save multiple post links under completed tasks;
-- favorite tasks with hearts;
-- detect invalid and duplicate links;
-- see unique-link, challenge and completion statistics;
-- collapse/expand categories;
-- see category and overall progress;
-- receive lightweight milestone celebrations;
-- keep progress locally in the browser;
-- export/import a JSON progress backup;
-- reset progress;
-- use the FAQ page;
-- optionally submit a rich **derived analytics snapshot** at season end.
+- 21 structured categories and 289 tasks;
+- 8 user-configurable seasonal targets/quotas;
+- task completion checkboxes;
+- per-task hearts/favorites;
+- one or more post-link fields for completed tasks;
+- invalid-link detection;
+- duplicate-link detection and unique-link statistics;
+- challenge statistics and completed-challenge calculation;
+- per-category completion counters;
+- global completed/total progress and percentage;
+- category collapse/expand and collapse-all/expand-all;
+- lightweight milestone celebrations;
+- browser-local persistence with no account requirement;
+- JSON export/backup and restore;
+- reset with confirmation;
+- a separate FAQ page;
+- an optional end-of-season rich **derived analytics** submission system.
 
-The production frontend is still dependency-free static **HTML/CSS/JavaScript**. There is no bundler, framework, analytics SDK or Supabase client in the browser.
+The frontend remains plain **HTML + CSS + JavaScript**. There is no frontend framework, bundler, analytics SDK, Supabase browser client, runtime package dependency, tracker or mandatory application server.
 
-## Main remediation work
-
-### Security
-
-- Removed the imported persistent DOM-XSS path by separating trusted repository template content from untrusted mutable backup/local state.
-- Dynamic rendering uses DOM/text APIs instead of unsafe HTML injection sinks.
-- Added restrictive Content Security Policy and moved executable scripts to same-origin files.
-- Import is bounded to 5 MiB and validated by exact schema/types/known IDs with dangerous-key rejection.
-- Dynamic URLs are limited to HTTP(S); new-tab links use `noopener noreferrer`.
-- Removed the old public browser `FINAL_TOKEN` design.
-- Production statistics accept only an explicitly enabled HTTPS Apps Script `/exec` endpoint.
-- Storage corruption/quota/security failures are contained instead of breaking the application.
-
-### Accessibility/mobile
-
-- Skip links, semantic headings/sections, labelled inputs, native `<progress>`, ARIA state/error relationships and strong focus indicators.
-- Reduced-motion and forced-colors support.
-- Larger touch targets and mobile-safe input sizing.
-- Grid/flex overflow hardening and long-token wrapping.
-- Safe-area-aware dynamically measured fixed-footer clearance.
-- Reserved cover aspect ratio to avoid layout shift.
-
-### Performance
-
-The large static DOM is built once and normal interactions use incremental updates, delegated events, indexed URL occurrences and compact mutable state rather than repeated full rendering/storage of the complete trusted template.
-
-See `REMEDIATION-EVIDENCE.md` for the recorded browser/accessibility/performance evidence.
-
----
-
-## Analytics architecture (schema v2)
-
-The new analytics goal is **maximum useful statistical signal with minimum raw/sensitive data**.
+## Current architecture
 
 ```text
-GitHub Pages static checklist
+GitHub Pages / static hosting
         |
-        | HTTPS POST (derived/pseudonymous analytics only)
+        | browser keeps raw checklist state locally
+        |
+        | optional HTTPS POST of derived analytics only
         v
 Google Apps Script gateway
         |
-        +--------------------+
-        |                    |
-        v                    v
-Google Sheets          Supabase PostgreSQL
-(normalized tabs)      (normalized tables + views)
+        +------------------------+
+        |                        |
+        v                        v
+Google Sheets                Supabase PostgreSQL
+normalized reporting        normalized analytics database
 ```
 
-### Browser-private raw state
+### Important security boundary
 
-The following stay in the browser and are **not included in the analytics payload**:
+The browser does **not** connect to Supabase directly.
 
-- actual post URLs;
-- post contents;
-- task/category text;
-- arbitrary localStorage data;
-- imported backup contents;
-- browser history;
-- raw user-agent string;
-- Supabase credentials.
+A modern Supabase `sb_secret_...` key lives only in **Google Apps Script Script Properties**. It is never placed in GitHub Pages HTML/JavaScript, committed to Git, returned by the gateway, or exposed through the public browser source.
 
-### Pseudonymous participant identity
+The browser also does **not** submit actual user post URLs or post contents to the analytics backend.
 
-`analytics.js` generates a random UUIDv4 `participantId` once and persists it separately in browser localStorage. It supports longitudinal/returning-participant statistics without requiring an email, phone number or account.
+## Recent analytics/security expansion
 
-It is **pseudonymous, not authenticated identity**. Clearing browser data creates a new ID and a malicious user can forge client data because the public site has no login.
+The original hardened statistics submission deliberately reduced the payload to a very small aggregate. That was secure, but it removed useful statistical signal. The current analytics schema expands the useful derived data while keeping raw content private.
 
-### Submission/idempotency identity
+### Analytics schema v2 can submit
 
-Each transmitted snapshot has a separate UUIDv4 `submissionId`. Failed requests preserve the pending UUID locally so retries are idempotent rather than producing accidental duplicate records.
+#### Technical/delivery context
 
-### Overall derived metrics
+- schema version;
+- analytics implementation version;
+- submission UUID;
+- persistent pseudonymous participant UUID;
+- checklist/template version;
+- source origin;
+- snapshot-generation timestamp.
 
-A final snapshot includes:
+#### Overall participation
 
-- total/checked tasks and completion percentage;
-- total/categories started/completed;
-- entered, valid, unique-valid, duplicate and invalid link counts;
+- total tasks;
+- checked tasks;
+- completion percentage;
+- total categories;
+- categories started;
+- fully completed categories;
+- total entered link count;
+- valid-link count;
+- unique valid-link count;
+- duplicate-link count;
+- invalid-link count;
 - favorite count;
-- challenge unique-link count and completed-challenge count;
-- tasks containing links;
-- tasks containing multiple links;
-- maximum links on a single task.
+- challenge-link count;
+- completed-challenge count;
+- tasks with links;
+- tasks with multiple links;
+- maximum links on one task.
 
-**Link counts are transmitted; link addresses are not.**
-
-### Per-category derived metrics
+#### Per-category derived data
 
 For each category ID:
 
-- task count;
+- total tasks;
 - checked count;
 - completion percentage;
-- favorite count;
-- entered/valid/unique/duplicate/invalid link counts;
-- completed-challenge count.
+- favorites;
+- entered links;
+- valid links;
+- unique valid links;
+- duplicates;
+- invalid links;
+- completed challenges where applicable.
 
-Category text/name is not transmitted in the payload; the release template provides its meaning.
+#### Per-task derived data
 
-### Per-task derived metrics
-
-For every task ID:
+For each task ID:
 
 - category ID;
-- checked boolean;
-- favorite boolean;
-- entered/valid/unique/duplicate/invalid link counts;
+- checked/not checked;
+- favorite/not favorite;
+- entered-link count;
+- valid-link count;
+- unique-valid-link count;
+- duplicate count;
+- invalid-link count;
 - completed-challenge count.
 
-Task text and actual URLs are not transmitted.
+The backend already knows the trusted template for a template version, so the client does **not** need to transmit task text or category text.
 
-This enables task popularity, skip rate, favorite rate, link-generation effectiveness and category-level performance analysis without collecting user-created content.
+#### Seasonal targets
 
-### Seasonal goal analytics
+For each quota ID:
 
-Each quota sends only:
+- numeric target, or `null` if unset.
 
-- `quotaId`;
-- numeric target or `null`.
+#### Engagement/progression aggregates
 
-### Longitudinal engagement analytics
-
-The browser stores aggregated counters rather than a raw clickstream:
-
-- first opened / last active timestamps;
-- active days;
+- first opened timestamp;
+- last active timestamp;
+- active-day count;
 - session count;
-- total active seconds;
-- export/import/reset counts;
-- task/favorite/category toggle counts;
-- collapse-all / expand-all counts;
+- accumulated active seconds;
+- export count;
+- import attempts;
+- successful imports;
+- reset count;
+- task-toggle count;
+- favorite-toggle count;
+- category-toggle count;
+- collapse-all count;
+- expand-all count;
 - committed-link-edit count;
-- first task completion;
-- first linked post;
-- first completed challenge;
-- halfway milestone;
+- first task completion timestamp;
+- first linked post timestamp;
+- first challenge completion timestamp;
+- halfway timestamp;
 - last task completion timestamp.
 
-### Daily aggregates
+#### Daily aggregates
 
-Up to 730 local daily aggregate rows may be retained, with:
+Up to 730 days of local daily aggregate history can be retained, including:
 
-- day;
 - active seconds;
 - sessions;
-- task/favorite/category toggles;
+- task toggles;
+- favorite toggles;
+- category toggles;
 - link commits;
 - exports;
 - import attempts/successes;
 - resets.
 
-There is no per-click timestamp stream.
+This is deliberately **not** a raw timestamped clickstream.
 
-### Coarse UI/device context
+#### Low-entropy client context
 
-Only low-entropy context useful for responsive/accessibility decisions is submitted:
-
-- viewport bucket (`<=480`, `481–768`, `769–1024`, `1025–1440`, `>1440`);
-- coarse input mode (`touch`, `pointer`, `mixed`, `unknown`);
+- coarse viewport bucket;
+- touch/pointer/mixed input category;
 - reduced-motion preference;
 - light/dark preference;
 - browser language.
 
-No raw user-agent fingerprint is sent.
+The code intentionally does not collect a raw User-Agent fingerprint.
 
----
+## Data that remains local and is not submitted
 
-## Apps Script gateway
+The analytics system intentionally excludes:
 
-`google-apps-script/Code.gs` is the only public ingestion endpoint.
+- actual post URLs;
+- post contents;
+- task text;
+- category text;
+- imported backup file contents;
+- arbitrary `localStorage` contents;
+- browser history;
+- raw clickstream events;
+- raw User-Agent strings;
+- passwords, emails, phone numbers or authentication credentials;
+- Supabase keys or database credentials.
 
-It performs independent validation before either storage sink is touched:
+## Pseudonymous participant identity
 
-- maximum 512 KiB request;
-- exact top-level and nested schemas;
-- UUIDv4 checks;
-- origin allowlist;
-- known template version policy (289 tasks, 21 categories, 8 quotas for the current release);
-- unique task/category/quota/day identifiers;
-- type/range/string bounds;
-- dangerous-key rejection;
-- arithmetic invariants (`entered = valid + invalid`, `valid = unique + duplicate`);
-- task -> category aggregation reconciliation;
-- category -> overall reconciliation;
-- daily -> engagement reconciliation;
-- challenge bound checks;
-- spreadsheet-formula neutralization;
-- script-wide write lock;
-- UUID duplicate detection;
-- approximate global minute/hour rate budgets.
+The analytics layer creates a random browser-local `participantId` with `crypto.randomUUID()` and keeps it separate from a per-submission `submissionId`.
 
-The endpoint is still anonymous. These controls prevent many malformed/accidental submissions but do not cryptographically prove a human identity.
+This enables useful longitudinal analysis such as returning-participant rates and season-to-season behavior without requiring account registration.
 
-### Dual-sink retry behavior
+It is **not authentication**: clearing browser storage creates a new identifier, and a malicious client can fabricate one.
 
-Sheets and Supabase are treated as independent idempotent sinks.
+## Google Apps Script gateway
 
-If one succeeds and the other temporarily fails, the browser keeps the same pending `submissionId`. A retry does not duplicate the successful side and can complete the missing side.
+The Apps Script backend is the only public ingestion gateway.
 
-`SUPABASE_REQUIRED=true` can be set in Apps Script Script Properties after Supabase staging is complete. Before that, Sheets can remain operational alone.
+It:
 
----
+- validates the exact analytics schema;
+- validates UUIDs, template version, counts, bounds and allowed IDs;
+- checks aggregate invariants instead of trusting arbitrary totals;
+- rejects unknown fields and dangerous object keys;
+- validates the source origin against the configured allowlist;
+- protects Google Sheets from spreadsheet-formula injection;
+- rate-limits anonymous submissions on a best-effort global basis;
+- uses `LockService` to serialize critical writes;
+- uses one submission UUID across all sinks;
+- supports safe retry when only one sink succeeds;
+- never returns the Supabase secret in health/error responses.
 
-## Google Sheets model
+The supplied gateway writes five normalized Google Sheets tabs:
 
-`setupReceiver()` creates/validates normalized tabs:
+- `Submissions`
+- `Categories`
+- `Tasks`
+- `Quotas`
+- `Daily`
 
-- `Submissions` — one wide aggregate row per snapshot;
-- `Categories` — one row per category/snapshot;
-- `Tasks` — one row per task/snapshot;
-- `Quotas` — one row per seasonal goal/snapshot;
-- `Daily` — one row per participant-day included in the snapshot.
+## Supabase PostgreSQL backend
 
-This keeps Sheets useful for manual inspection and pivots while avoiding raw URLs/post content.
+`supabase/schema.sql` creates a normalized analytics model:
 
----
+- `analytics_submissions`
+- `analytics_categories`
+- `analytics_tasks`
+- `analytics_quotas`
+- `analytics_daily`
 
-## Supabase PostgreSQL
+It also creates analytical views:
 
-Run `supabase/schema.sql` in the Supabase SQL Editor.
+- `analytics_template_summary`
+- `analytics_task_popularity`
+- `analytics_category_performance`
+- `analytics_daily_engagement`
 
-It creates:
+### Database security
 
-- `analytics_submissions`;
-- `analytics_categories`;
-- `analytics_tasks`;
-- `analytics_quotas`;
-- `analytics_daily`;
-- indexes for participant/template/task/category/day analysis;
-- RLS-enabled tables with no `anon` or `authenticated` access;
-- transactional `ingest_analytics_submission(jsonb)` RPC;
-- aggregate views:
-  - `analytics_template_summary`;
-  - `analytics_task_popularity`;
-  - `analytics_category_performance`;
-  - `analytics_daily_engagement`.
+The supplied SQL:
 
-The RPC writes a complete snapshot and its children in a single PostgreSQL transaction. A repeated `submissionId` returns success as a duplicate without inserting a second dataset.
+- enables Row Level Security on analytics tables;
+- revokes table access from `public`, `anon` and `authenticated`;
+- does not expose the analytics tables to the GitHub Pages browser;
+- exposes ingestion only to the elevated backend role;
+- uses a `SECURITY DEFINER` ingestion RPC with a fixed `search_path`;
+- writes a submission and all child rows transactionally;
+- uses `submission_id` as the primary idempotency key.
 
-### Supabase secret handling
+A current Supabase secret key has elevated/service-role privileges and bypasses RLS, so it must stay strictly server-side. In this architecture it exists only in Apps Script Script Properties.
 
-Use a modern `sb_secret_...` key. It is stored only in **Apps Script Script Properties**, never in this repository and never in GitHub Pages JavaScript.
+## Dual-sink reliability
 
-Required properties:
+One submission UUID is shared by browser, Apps Script, Sheets and Supabase.
+
+If Sheets succeeds and Supabase temporarily fails, or vice versa, the client retains the pending UUID. Retrying does not duplicate the already-successful sink:
+
+- Sheets checks for the existing `submissionId`;
+- Supabase uses the submission UUID as its primary idempotency key.
+
+## Core security remediation retained
+
+The analytics expansion keeps the earlier hardening work:
+
+- imported persistent DOM-XSS path removed;
+- trusted repository template separated from untrusted mutable backup/progress state;
+- rendering uses DOM/text APIs rather than unsafe HTML injection sinks;
+- restrictive Content Security Policy;
+- executable JavaScript moved to same-origin external files;
+- 5 MiB bounded import;
+- strict schema/type/known-ID validation;
+- prototype-pollution/dangerous-key rejection;
+- HTTP(S)-only dynamic URL handling;
+- `noopener noreferrer` for new-tab links;
+- storage corruption/quota/security failures contained with in-memory fallback/recovery behavior;
+- legacy duplicated task-ID migration;
+- duplicate-link statistics fixed;
+- challenge calculation corrected with floor division;
+- safe import/export lifecycle.
+
+## Accessibility/mobile/performance retained
+
+The hardened UI includes:
+
+- skip links;
+- semantic heading/section structure;
+- proper labels and accessible names;
+- native `<progress>`;
+- ARIA state/error relationships;
+- strong keyboard focus indicators;
+- reduced-motion support;
+- forced-colors support;
+- larger mobile targets;
+- mobile-safe input sizing;
+- grid/flex overflow hardening;
+- long-token wrapping;
+- safe-area-aware measured footer clearance;
+- reserved cover aspect ratio to reduce layout shift.
+
+Normal interactions use incremental updates, delegated events, indexed URL occurrences and compact mutable state rather than repeatedly rebuilding/storing the full template.
+
+## JavaScript separation
+
+The current frontend keeps analytics separate from core product behavior:
 
 ```text
-SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_SECRET_KEY=sb_secret_...
-SUPABASE_REQUIRED=false
+checklist.js
+   loader
+   |
+   +--> checklist-core.js   hardened checklist behavior
+   |
+   +--> analytics.js        derived analytics + optional submit path
+
+faq.js
+   loader/privacy adapter
+   |
+   +--> faq-core.js         hardened FAQ renderer
 ```
 
-After end-to-end staging succeeds, change:
+This reduces the chance that analytics work destabilizes the core checklist.
 
-```text
-SUPABASE_REQUIRED=true
-```
+## Apps Script files
 
-See `supabase/README.md` and `google-apps-script/README.md`.
+- `google-apps-script/Code.gs` — analytics validation, Sheets writes, Supabase mirroring, idempotency and rate controls.
+- `google-apps-script/Compat.gs` — small compatibility shim needed because Apps Script V8 does not expose every browser Web API used by ordinary JavaScript environments.
+- `google-apps-script/appsscript.json` — V8 manifest with explicit Sheets and external-request OAuth scopes.
+- `google-apps-script/README.md` — component-specific notes.
 
----
+## Supabase files
 
-## Activation
+- `supabase/schema.sql` — complete schema, permissions, RPC and views.
+- `supabase/README.md` — component-specific notes and example queries.
 
-The repository intentionally keeps remote collection disabled until owner configuration is ready.
+## Testing/evidence
 
-In `checklist.html`:
+Relevant files include:
 
-```json
-{
-  "templateVersion": "2026-11-22",
-  "challengeCategoryName": "Челленджи",
-  "challengeCompleteThreshold": 10,
-  "finalStatsEnabled": true,
-  "finalStatsUrl": "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
-}
-```
+- `tests/check-static.mjs`
+- `tests/check-analytics.mjs`
+- browser/Playwright regression scripts in `tests/`
+- `REMEDIATION-EVIDENCE.md`
+- `SECURITY-REVIEW.md`
+- `ANALYTICS-SECURITY.md`
 
-Use a real `/exec` deployment, not `/dev`.
-
----
-
-## Local preview/checks
+Useful local checks:
 
 ```powershell
-py -m http.server 4174 --bind 127.0.0.1
 node tests/check-static.mjs
 node tests/check-analytics.mjs
+node --check checklist.js
+node --check checklist-core.js
+node --check analytics.js
+node --check faq.js
+node --check faq-core.js
 ```
 
-Open:
+## Analytics is disabled by default
 
-```text
-http://127.0.0.1:4174/
-http://127.0.0.1:4174/checklist.html
+The repository deliberately ships with:
+
+```json
+"finalStatsEnabled": false,
+"finalStatsUrl": ""
 ```
+
+Normal GitHub Pages checklist functionality works without Google Apps Script or Supabase.
+
+Only enable collection after the complete staging procedure in **[`SETUP-GUIDE.md`](SETUP-GUIDE.md)** has passed.
+
+## Deployment/setup
+
+Use the full bilingual chronological guide:
+
+**[`SETUP-GUIDE.md`](SETUP-GUIDE.md)**
+
+It covers, in order:
+
+1. GitHub Pages publishing;
+2. Supabase Free project creation;
+3. running `supabase/schema.sql`;
+4. obtaining a modern backend-only `sb_secret_...` key;
+5. creating the Apps Script project;
+6. installing `Code.gs`, `Compat.gs` and `appsscript.json`;
+7. reviewing `OWNER_SETUP`;
+8. running Apps Script self-tests and `setupReceiver()`;
+9. configuring Script Properties;
+10. validating Supabase connectivity;
+11. deploying the Apps Script `/exec` Web App;
+12. health checking;
+13. staging the GitHub Pages client;
+14. verifying Sheets and Supabase together;
+15. enabling `SUPABASE_REQUIRED`;
+16. activating analytics in production;
+17. monitoring, rotation, rollback and future-season updates.
 
 ---
 
-## Important security/privacy limitations
-
-- A static anonymous client cannot prove a person's identity. `participantId`, origin and all analytics values can ultimately be forged by a determined attacker.
-- Apps Script cache-based rate budgets are best-effort, not a substitute for a dedicated authenticated API/WAF.
-- Supabase `sb_secret_...` keys bypass RLS and must remain server-side. Rotate immediately if exposed.
-- Browser-local progress is not cloud synchronization.
-- Google/Supabase operational quotas and account-specific behavior must be staged with the owner's real accounts.
-- The existing remote cover image still creates an ordinary request to the LiveJournal image host; no checklist analytics are placed in that request.
-
-For deeper security discussion see `SECURITY-REVIEW.md` and `ANALYTICS-SECURITY.md`.
-
----
+<a id="русский"></a>
 
 # Русский
 
-## Назначение
+## Что это за проект
 
-4ek-lis — браузерный органайзер для сезонных марафонов LiveJournal, хешмобов, тем для публикаций и челленджей. Для обычной работы не требуется аккаунт или application-server.
+**4ek-lis** — статический веб-органайзер без runtime-зависимостей для сезонных марафонов LiveJournal, хешмобов, тем публикаций и челленджей. Обычная работа пользователя выполняется полностью в браузере и остаётся совместимой с **GitHub Pages** и любым обычным статическим хостингом.
 
-Пользователь может:
+Текущий чек-лист предоставляет:
 
-- работать с 21 категорией / 289 заданиями;
-- задать 8 целей на сезон;
-- отмечать выполненные задания;
-- сохранять несколько ссылок на посты под выполненным заданием;
-- отмечать задания сердечком;
-- видеть некорректные и дублированные ссылки;
-- видеть статистику уникальных ссылок, челленджей и общего выполнения;
-- сворачивать/разворачивать категории;
-- видеть прогресс категории и всего чек-листа;
-- получать лёгкие milestone-поздравления;
-- хранить прогресс локально в браузере;
-- экспортировать/восстанавливать JSON backup;
-- сбрасывать прогресс;
-- пользоваться ЧАВО;
-- при явном включении отправлять расширенный **снимок производной аналитики** по итогам сезона.
+- 21 структурированную категорию и 289 заданий;
+- 8 настраиваемых пользователем целей/квот на сезон;
+- checkbox выполнения заданий;
+- сердечки/избранное для каждого задания;
+- одно или несколько полей ссылок для выполненного задания;
+- обнаружение некорректных ссылок;
+- обнаружение дубликатов и статистику уникальных ссылок;
+- статистику челленджей и подсчёт выполненных челленджей;
+- прогресс по каждой категории;
+- общий completed/total progress и процент;
+- сворачивание/разворачивание категорий и кнопки «свернуть всё / развернуть всё»;
+- лёгкие milestone-поздравления;
+- локальное хранение в браузере без регистрации;
+- JSON backup/export и восстановление;
+- сброс с подтверждением;
+- отдельную страницу ЧАВО;
+- необязательную отправку расширенного **производного аналитического снимка** по итогам сезона.
 
-Frontend остаётся полностью статическим и dependency-free: **HTML/CSS/JavaScript**. В браузере нет Supabase SDK, analytics SDK, framework или секретного ключа.
+Frontend остаётся обычным **HTML + CSS + JavaScript**. Нет frontend-фреймворка, bundler, analytics SDK, Supabase browser client, обязательного package/runtime dependency, tracker или обязательного application server.
 
-## Основные исправления
-
-### Безопасность
-
-- Устранён persistent DOM-XSS через импорт: доверенный шаблон репозитория отделён от недоверенного mutable state.
-- Dynamic render строится DOM/text API вместо unsafe HTML injection.
-- Добавлен строгий CSP, executable scripts вынесены в same-origin файлы.
-- Import ограничен 5 MiB и проверяется по schema/types/known IDs с блокировкой опасных ключей.
-- Dynamic URL разрешены только HTTP(S), new-tab links используют `noopener noreferrer`.
-- Старый публичный browser `FINAL_TOKEN` удалён.
-- Production statistics принимают только явно включённый Apps Script HTTPS `/exec`.
-- Ошибки localStorage/corruption/quota не должны ломать приложение.
-
-### Accessibility/mobile
-
-- Skip links, semantic headings/sections, labels, native `<progress>`, ARIA состояния/ошибки и заметный focus.
-- Reduced motion и forced colors.
-- Более крупные touch targets, mobile-safe input sizing.
-- Grid/flex overflow fixes, перенос длинных URL/токенов.
-- Safe-area и динамически измеряемый clearance fixed footer.
-- Зарезервированный aspect ratio обложки против layout shift.
-
-### Производительность
-
-Большой DOM строится один раз. Обычные действия обновляют только нужные части, используют delegated events, индекс URL и компактное mutable state вместо постоянного полного rerender/full-template storage.
-
----
-
-## Архитектура аналитики (schema v2)
-
-Цель: **максимум полезной статистики при минимуме сырого/чувствительного содержимого**.
+## Текущая архитектура
 
 ```text
-GitHub Pages checklist
+GitHub Pages / статический хостинг
         |
-        | HTTPS POST — только derived/pseudonymous analytics
+        | сырое состояние чек-листа остаётся в браузере
+        |
+        | необязательный HTTPS POST только производной аналитики
         v
 Google Apps Script gateway
         |
-        +--------------------+
-        |                    |
-        v                    v
-Google Sheets          Supabase PostgreSQL
+        +------------------------+
+        |                        |
+        v                        v
+Google Sheets                Supabase PostgreSQL
+нормализованные отчёты      нормализованная аналитическая БД
 ```
 
-### Что остаётся только в браузере
+### Важная граница безопасности
 
-Не отправляются:
+Браузер **не подключается к Supabase напрямую**.
 
-- реальные URL постов;
-- содержимое публикаций;
-- текст заданий/категорий;
-- произвольный localStorage;
-- содержимое backup-файлов;
-- история браузера;
-- raw User-Agent;
-- Supabase credentials.
+Современный Supabase ключ `sb_secret_...` хранится только в **Google Apps Script Script Properties**. Он никогда не размещается в HTML/JavaScript GitHub Pages, не commit-ится в Git, не возвращается gateway и не появляется в публичном исходном коде браузера.
 
-### Pseudonymous participantId
+Браузер также **не отправляет реальные URL пользовательских постов или содержимое публикаций** в аналитический backend.
 
-`analytics.js` один раз создаёт случайный UUIDv4 `participantId` и хранит его отдельно в localStorage. Это позволяет анализировать возвращающихся участников и сезонную динамику без email/телефона/аккаунта.
+## Последнее расширение аналитики и безопасности
 
-Это **псевдонимный, но не аутентифицированный ID**: очистка browser data создаст новый ID, а анонимный клиент технически может подделать данные.
+Первая усиленная версия намеренно уменьшила финальную статистику до очень маленького payload. Это было безопасно, но убрало часть полезного статистического сигнала. Текущая schema v2 возвращает богатую производную аналитику, не отправляя сырой пользовательский контент.
 
-### submissionId
+### Analytics schema v2 может отправлять
 
-Каждый отправляемый snapshot получает отдельный UUIDv4 `submissionId`. При ошибке тот же UUID сохраняется локально и используется при retry, поэтому повтор не создаёт случайно второй набор строк.
+#### Технический контекст доставки
 
-### Общие derived metrics
+- версию schema;
+- версию analytics implementation;
+- UUID конкретной отправки;
+- постоянный псевдонимный UUID участника в данном браузере;
+- версию шаблона/чек-листа;
+- source origin;
+- timestamp создания снимка.
 
-Отправляются:
+#### Общий прогресс
 
-- total/checked tasks и completion percent;
-- категории total/started/completed;
-- entered/valid/unique/duplicate/invalid link counts;
-- favorite count;
-- challenge links и completed challenges;
-- количество заданий со ссылками/несколькими ссылками;
-- максимальное число ссылок у одного задания.
+- всего заданий;
+- отмечено заданий;
+- процент выполнения;
+- всего категорий;
+- начатые категории;
+- полностью завершённые категории;
+- общее количество введённых ссылок;
+- количество корректных ссылок;
+- количество уникальных корректных ссылок;
+- количество дубликатов;
+- количество некорректных ссылок;
+- количество избранных заданий;
+- количество ссылок в челленджах;
+- количество выполненных челленджей;
+- задания со ссылками;
+- задания с несколькими ссылками;
+- максимальное количество ссылок у одного задания.
 
-**Передаются количества ссылок, но не сами URL.**
+#### Производная статистика по категориям
 
-### По категориям
+Для каждого category ID:
 
-Для каждого `categoryId`:
+- всего заданий;
+- выполнено;
+- процент выполнения;
+- избранное;
+- введённые ссылки;
+- корректные ссылки;
+- уникальные корректные ссылки;
+- дубликаты;
+- некорректные ссылки;
+- выполненные челленджи, где применимо.
 
-- task count;
-- checked count;
-- completion percent;
-- favorite count;
-- entered/valid/unique/duplicate/invalid link counts;
-- completed challenges.
+#### Производная статистика по заданиям
 
-Текст/название категории в payload не передаётся.
+Для каждого task ID:
 
-### По заданиям
+- category ID;
+- выполнено/не выполнено;
+- favorite/not favorite;
+- количество введённых ссылок;
+- количество корректных ссылок;
+- количество уникальных корректных ссылок;
+- количество дубликатов;
+- количество некорректных ссылок;
+- количество выполненных челленджей.
 
-Для каждого `taskId`:
+Backend уже знает доверенный шаблон для соответствующей `templateVersion`, поэтому клиенту не требуется отправлять текст задания или название категории.
 
-- `categoryId`;
-- checked;
-- favorite;
-- entered/valid/unique/duplicate/invalid link counts;
-- completed challenges.
+#### Цели на сезон
 
-Текст задания и URL не передаются.
+Для каждого quota ID:
 
-Это позволяет считать popularity/skip/favorite rates и эффективность заданий без сбора пользовательского контента.
+- числовая цель или `null`, если не задана.
 
-### Цели сезона
+#### Engagement/progression aggregates
 
-Для каждой quota отправляются только `quotaId` и numeric target/null.
+- первое открытие;
+- последняя активность;
+- количество активных дней;
+- количество сессий;
+- суммарное активное время;
+- количество export;
+- попытки import;
+- успешные import;
+- количество reset;
+- task toggles;
+- favorite toggles;
+- category toggles;
+- collapse-all;
+- expand-all;
+- подтверждённые редактирования ссылок;
+- время первого выполненного задания;
+- время первой добавленной корректной ссылки;
+- время первого выполненного челленджа;
+- момент достижения половины чек-листа;
+- время последнего выполненного задания.
 
-### Longitudinal engagement
+#### Дневные агрегаты
 
-В браузере собираются агрегированные counters, а не raw clickstream:
+Локально может храниться до 730 дней агрегированной истории:
 
-- first opened / last active;
-- active days;
-- session count;
-- total active seconds;
-- export/import/reset counts;
-- task/favorite/category toggle counts;
-- collapse-all / expand-all counts;
-- количество завершённых редактирований ссылок;
-- first task / first linked post / first challenge / halfway / last completed task timestamps.
-
-### Daily aggregates
-
-До 730 локальных дневных записей:
-
-- день;
-- active seconds;
+- активные секунды;
 - sessions;
-- task/favorite/category toggles;
+- task toggles;
+- favorite toggles;
+- category toggles;
 - link commits;
 - exports;
 - import attempts/successes;
 - resets.
 
-Отдельного журнала каждого клика с точным временем нет.
+Это специально **не** сырая поминутная/посекундная история кликов.
 
-### Coarse client context
+#### Низкоэнтропийный client context
 
-Для анализа UI/accessibility отправляется только низкоэнтропийный контекст:
-
-- bucket ширины viewport;
-- coarse input mode;
+- грубая категория ширины viewport;
+- touch/pointer/mixed input;
 - reduced-motion preference;
 - light/dark preference;
-- browser language.
+- язык браузера.
 
-Raw User-Agent fingerprint не отправляется.
+Код специально не собирает raw User-Agent fingerprint.
 
----
+## Что остаётся локально и не отправляется
 
-## Apps Script gateway
+Аналитика намеренно исключает:
 
-`google-apps-script/Code.gs` независимо проверяет payload до записи:
+- реальные URL постов;
+- содержимое постов;
+- текст заданий;
+- текст категорий;
+- содержимое импортированных backup-файлов;
+- произвольное содержимое `localStorage`;
+- browser history;
+- raw clickstream;
+- raw User-Agent;
+- пароли, email, телефоны или auth credentials;
+- Supabase keys или database credentials.
 
-- максимум 512 KiB;
-- exact nested schemas;
-- UUIDv4;
-- allowlist origin;
-- policy текущего шаблона (289 tasks / 21 categories / 8 quotas);
-- уникальные IDs;
-- ranges/types/string limits;
-- dangerous-key rejection;
-- арифметические invariants ссылок;
-- сверку task -> category -> overall aggregates;
-- сверку daily -> engagement;
-- challenge bounds;
-- защиту Google Sheets от formula injection;
-- global script lock;
-- duplicate submission UUID;
-- приблизительные minute/hour rate budgets.
+## Псевдонимный participant ID
 
-Endpoint остаётся анонимным: это сильная validation/integrity защита, но не доказательство личности человека.
+Analytics layer создаёт случайный локальный `participantId` через `crypto.randomUUID()` отдельно от `submissionId` конкретной отправки.
 
-### Dual sink retry
+Это позволяет считать returning participants и сравнивать сезоны без обязательной регистрации пользователя.
 
-Google Sheets и Supabase — независимые idempotent sinks. Если один успел записать данные, а второй временно упал, retry с тем же `submissionId` не дублирует успешную сторону и может дозаписать вторую.
+Это **не аутентификация**: очистка browser storage создаёт новый identifier, а злоумышленник может подделать UUID.
 
----
+## Google Apps Script gateway
 
-## Google Sheets
+Apps Script является единственной публичной точкой приёма аналитики.
 
-`setupReceiver()` создаёт/проверяет tabs:
+Он:
 
-- `Submissions`;
-- `Categories`;
-- `Tasks`;
-- `Quotas`;
-- `Daily`.
+- проверяет точную analytics schema;
+- валидирует UUID, template version, counts, bounds и разрешённые IDs;
+- проверяет инварианты агрегатов, а не доверяет произвольным total значениям;
+- отклоняет неизвестные поля и опасные object keys;
+- проверяет source origin по allowlist;
+- защищает Google Sheets от spreadsheet-formula injection;
+- применяет best-effort global rate limiting;
+- использует `LockService` для критических записей;
+- использует один submission UUID во всех storage sinks;
+- позволяет безопасно повторить отправку при частичном сбое;
+- никогда не возвращает Supabase secret в public health/error responses.
 
-В них сохраняется нормализованная аналитика без raw URL/post text.
+Gateway создаёт пять нормализованных вкладок Google Sheets:
 
----
+- `Submissions`
+- `Categories`
+- `Tasks`
+- `Quotas`
+- `Daily`
 
-## Supabase PostgreSQL
+## Supabase PostgreSQL backend
 
-Выполните `supabase/schema.sql` через Supabase SQL Editor.
+`supabase/schema.sql` создаёт:
 
-Создаются:
+- `analytics_submissions`
+- `analytics_categories`
+- `analytics_tasks`
+- `analytics_quotas`
+- `analytics_daily`
 
-- `analytics_submissions`;
-- `analytics_categories`;
-- `analytics_tasks`;
-- `analytics_quotas`;
-- `analytics_daily`;
-- indexes;
-- RLS tables без доступа для `anon`/`authenticated`;
-- transactional RPC `ingest_analytics_submission(jsonb)`;
-- views `analytics_template_summary`, `analytics_task_popularity`, `analytics_category_performance`, `analytics_daily_engagement`.
+и аналитические views:
 
-Повтор того же `submissionId` считается безопасным duplicate и не создаёт второй dataset.
+- `analytics_template_summary`
+- `analytics_task_popularity`
+- `analytics_category_performance`
+- `analytics_daily_engagement`
 
-### Supabase secret
+### Безопасность базы данных
 
-Используйте современный `sb_secret_...` key. Он хранится только в Apps Script Script Properties и **никогда** не помещается в GitHub/HTML/JS.
+Предоставленный SQL:
+
+- включает Row Level Security для analytics tables;
+- отзывает table access у `public`, `anon`, `authenticated`;
+- не предоставляет GitHub Pages browser прямой доступ к analytics tables;
+- разрешает ingestion только elevated backend role;
+- использует `SECURITY DEFINER` RPC с фиксированным `search_path`;
+- записывает parent + child rows в одной транзакции;
+- использует `submission_id` как основной idempotency key.
+
+Современный Supabase secret key имеет elevated/service-role доступ и обходит RLS, поэтому он обязан оставаться server-side. В этой архитектуре он существует только в Apps Script Script Properties.
+
+## Надёжность двух storage sinks
+
+Один submission UUID используется браузером, Apps Script, Sheets и Supabase.
+
+Если Sheets успешно записал данные, а Supabase временно не ответил — или наоборот — browser сохраняет pending UUID. Повтор не дублирует уже успешный sink:
+
+- Sheets проверяет существующий `submissionId`;
+- Supabase использует submission UUID как primary idempotency key.
+
+## Сохранённые security remediation
+
+Analytics expansion сохраняет предыдущие исправления:
+
+- устранён persistent DOM-XSS через импорт;
+- trusted repository template отделён от untrusted mutable backup/progress state;
+- render использует DOM/text APIs вместо unsafe HTML sinks;
+- строгий Content Security Policy;
+- executable JavaScript вынесен в same-origin files;
+- import ограничен 5 MiB;
+- строгая schema/type/known-ID validation;
+- защита от prototype pollution/dangerous keys;
+- только HTTP(S) dynamic URLs;
+- `noopener noreferrer` для new-tab links;
+- storage corruption/quota/security failures не ломают приложение;
+- migration старого duplicated task ID;
+- исправлена статистика duplicate links;
+- исправлен расчёт челленджей через floor division;
+- безопасный import/export lifecycle.
+
+## Accessibility/mobile/performance
+
+Усиленный UI сохраняет:
+
+- skip links;
+- semantic heading/section structure;
+- labels и accessible names;
+- native `<progress>`;
+- ARIA state/error relationships;
+- заметный keyboard focus;
+- reduced-motion support;
+- forced-colors support;
+- более крупные mobile targets;
+- mobile-safe input sizing;
+- grid/flex overflow hardening;
+- перенос длинных токенов/URL;
+- safe-area-aware measured footer clearance;
+- зарезервированный aspect ratio обложки против layout shift.
+
+Основные взаимодействия используют incremental updates, delegated events, indexed URL occurrences и компактное mutable state вместо постоянной полной перестройки/сохранения шаблона.
+
+## Разделение JavaScript
 
 ```text
-SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-SUPABASE_SECRET_KEY=sb_secret_...
-SUPABASE_REQUIRED=false
+checklist.js
+   loader
+   |
+   +--> checklist-core.js   основной hardened checklist
+   |
+   +--> analytics.js        derived analytics + optional submit
+
+faq.js
+   loader/privacy adapter
+   |
+   +--> faq-core.js         hardened FAQ renderer
 ```
 
-После полного staging:
+Так analytics logic меньше рискует сломать основную функциональность чек-листа.
 
-```text
-SUPABASE_REQUIRED=true
-```
+## Файлы Apps Script
 
----
+- `google-apps-script/Code.gs` — validation, Google Sheets writes, Supabase mirroring, idempotency и rate controls.
+- `google-apps-script/Compat.gs` — небольшой compatibility shim для различий Apps Script V8 и browser JavaScript APIs.
+- `google-apps-script/appsscript.json` — V8 manifest с явными OAuth scopes для Sheets и external requests.
+- `google-apps-script/README.md` — краткая component-specific документация.
 
-## Включение remote collection
+## Файлы Supabase
 
-По умолчанию repository оставляет её выключенной до готовности backend.
+- `supabase/schema.sql` — полная schema, permissions, RPC и views.
+- `supabase/README.md` — краткая component-specific документация и запросы.
 
-В `checklist.html`:
+## Testing/evidence
 
-```json
-{
-  "templateVersion": "2026-11-22",
-  "challengeCategoryName": "Челленджи",
-  "challengeCompleteThreshold": 10,
-  "finalStatsEnabled": true,
-  "finalStatsUrl": "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec"
-}
-```
+Основные файлы:
 
-Только `/exec`, не `/dev`.
+- `tests/check-static.mjs`
+- `tests/check-analytics.mjs`
+- browser/Playwright regression scripts в `tests/`
+- `REMEDIATION-EVIDENCE.md`
+- `SECURITY-REVIEW.md`
+- `ANALYTICS-SECURITY.md`
 
----
-
-## Локальная проверка
+Локальные проверки:
 
 ```powershell
-py -m http.server 4174 --bind 127.0.0.1
 node tests/check-static.mjs
 node tests/check-analytics.mjs
+node --check checklist.js
+node --check checklist-core.js
+node --check analytics.js
+node --check faq.js
+node --check faq-core.js
 ```
 
----
+## Аналитика по умолчанию отключена
 
-## Ограничения
+Репозиторий специально поставляется с:
 
-- Анонимный static client не может криптографически доказать личность пользователя.
-- `participantId`, origin и analytics значения в принципе можно подделать намеренным клиентом.
-- Cache-based rate limit Apps Script — best effort.
-- `sb_secret_...` bypasses RLS и обязан оставаться server-side; при утечке его нужно немедленно rotate/revoke.
-- Browser-local state не является cloud sync.
-- Реальные Google/Supabase quotas и permissions необходимо проверить на staging владельца.
+```json
+"finalStatsEnabled": false,
+"finalStatsUrl": ""
+```
 
-Подробности: `SECURITY-REVIEW.md`, `ANALYTICS-SECURITY.md`, `REMEDIATION-EVIDENCE.md`.
+Обычный чек-лист GitHub Pages работает без Google Apps Script и Supabase.
+
+Включайте сбор только после полного staging-процесса из **[`SETUP-GUIDE.md`](SETUP-GUIDE.md)**.
+
+## Установка и настройка
+
+Используйте полный двуязычный хронологический guide:
+
+**[`SETUP-GUIDE.md`](SETUP-GUIDE.md)**
+
+Он последовательно описывает:
+
+1. GitHub Pages;
+2. создание Supabase Free project;
+3. запуск `supabase/schema.sql`;
+4. получение современного backend-only `sb_secret_...`;
+5. создание Google Apps Script project;
+6. установку `Code.gs`, `Compat.gs`, `appsscript.json`;
+7. проверку `OWNER_SETUP`;
+8. self-tests и `setupReceiver()`;
+9. Script Properties;
+10. проверку Supabase connection;
+11. deployment Apps Script `/exec` Web App;
+12. health check;
+13. staging GitHub Pages client;
+14. совместную проверку Sheets + Supabase;
+15. включение `SUPABASE_REQUIRED`;
+16. production activation analytics;
+17. monitoring, key rotation, rollback и обновление нового сезона.
