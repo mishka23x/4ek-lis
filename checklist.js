@@ -1,16 +1,35 @@
 'use strict';
 
 (() => {
-  function loadScript(src, onload) {
+  function reportLoadFailure(src) {
+    const status = document.getElementById('appStatus');
+    if (status) status.textContent = `Не удалось загрузить скрипт приложения: ${src}`;
+  }
+
+  function loadScript(src, onload, onerror) {
     const script = document.createElement('script');
     script.src = src;
     script.onload = onload || null;
     script.onerror = () => {
-      const status = document.getElementById('appStatus');
-      if (status) status.textContent = 'Не удалось загрузить скрипт приложения.';
+      if (typeof onerror === 'function') onerror();
+      else reportLoadFailure(src);
     };
     document.head.appendChild(script);
   }
 
-  loadScript('checklist-core.js', () => loadScript('analytics.js'));
+  function loadCoreAndAnalytics() {
+    loadScript('checklist-core.js', () => loadScript('analytics.js'));
+  }
+
+  // Curated upstream copy corrections are optional at runtime: if the small
+  // reconciliation layer fails to load, the hardened baseline checklist still
+  // starts normally rather than becoming unavailable.
+  loadScript(
+    'template-corrections.js',
+    loadCoreAndAnalytics,
+    () => {
+      console.warn('4ek-lis: optional upstream template corrections could not be loaded');
+      loadCoreAndAnalytics();
+    }
+  );
 })();
