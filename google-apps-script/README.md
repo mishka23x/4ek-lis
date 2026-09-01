@@ -1,50 +1,63 @@
-# Google Apps Script receiver setup
+# Google Apps Script analytics gateway
 
-This folder is the dependency-free receiver for the checklist's optional final-season submission. The browser sends one aggregate record: nickname, template version, source-origin signal, submission UUID, and number of checked tasks. It does **not** send entered links, task text, categories, the imported backup, or the rest of local progress.
+This folder contains the server-side gateway used by the static GitHub Pages client. It validates one rich **derived analytics snapshot**, writes normalized Google Sheets tabs, and can mirror the same validated snapshot into Supabase PostgreSQL.
 
-The endpoint is intentionally anonymous. No token embedded in a static page can be a secret. The receiver therefore uses strict schema and size validation, a configured template/count allowlist, durable submission-ID deduplication, a script lock, formula-safe spreadsheet values, and global quota-oriented rate limits. These controls reduce accidental and bulk abuse; they do not prove a person's identity or stop a determined distributed attacker.
+## Security rules
 
-## 1. Create the Apps Script project
+- Never put Supabase credentials in `checklist.html`, `analytics.js`, GitHub secrets exposed to Pages, or any public file.
+- Use a modern Supabase `sb_secret_...` key only in Apps Script **Script Properties**.
+- The browser never sends actual post URLs or post/task/category text.
+- The endpoint is anonymous; validation/rate limits/idempotency reduce abuse but do not authenticate a person.
 
-1. Open <https://script.google.com/> and create a new standalone project.
-2. Replace its `Code.gs` with this folder's `Code.gs`.
-3. In Project Settings, enable **Show `appsscript.json` manifest file in editor**.
-4. Replace the manifest with this folder's `appsscript.json`.
+## 1. Create Apps Script project
 
-The manifest uses the V8 runtime and only the Google Sheets OAuth scope.
+1. Create a standalone project at Google Apps Script.
+2. Replace `Code.gs` with this repository's `Code.gs`.
+3. Enable the manifest in Project Settings.
+4. Replace `appsscript.json` with the repository version.
+5. Run `runSelfTests()`.
+6. Run `setupReceiver()` and authorize Sheets + external-request permissions.
 
-## 2. Review the owner configuration
+`setupReceiver()` creates/validates these tabs:
 
-At the top of `Code.gs`, review `OWNER_SETUP`:
+- `Submissions`
+- `Categories`
+- `Tasks`
+- `Quotas`
+- `Daily`
 
-- Leave `spreadsheetId` empty to create a new spreadsheet automatically, or paste an existing Google Sheets file ID.
-- Keep `allowedOrigins` as exact `location.origin` values. The GitHub Pages production origin is already included. Add an exact HTTPS origin if the static files move to another host.
-- Keep `templateTaskLimits` synchronized with `appConfig.templateVersion` and the number of tasks in `checklist.html`.
-- Adjust the global minute/hour budgets conservatively for the owner's Apps Script quotas.
+## 2. Supabase Script Properties
 
-None of these values is a secret. Do not add passwords, OAuth tokens, private keys, or reusable server secrets to the static client.
+After running `supabase/schema.sql`, add these **Script Properties** in Apps Script Project Settings:
 
-## 3. Run local script checks in the Apps Script editor
+```text
+SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+SUPABASE_SECRET_KEY=sb_secret_...
+SUPABASE_REQUIRED=false
+```
 
-1. Select `runSelfTests` and click **Run**. It should return an object with `ok: true` and twelve tests.
-2. Select `setupReceiver` and click **Run**.
-3. Complete the owner authorization prompt.
-4. Inspect the returned object or execution log. Open `spreadsheetUrl` and verify the header row.
+Run `validateSupabaseConfiguration()`.
 
-`setupReceiver` stores runtime configuration in Script Properties and is safe to rerun. If an existing destination sheet has different headers, it stops instead of overwriting it.
+Keep `SUPABASE_REQUIRED=false` during staging so Sheets remains usable while Supabase is being verified. After a successful end-to-end test, set:
 
-## 4. Deploy the public web app
+```text
+SUPABASE_REQUIRED=true
+```
 
-1. Choose **Deploy → New deployment → Web app**.
-2. Set **Execute as** to the deploying owner.
-3. Set access to the option that permits the intended anonymous public users (normally **Anyone**; exact wording can depend on account/domain policy).
-4. Deploy and copy the URL ending in `/exec`.
+The gateway sends the secret only in the server-side `apikey` header. It is never returned by `doGet()` or public error responses.
 
-Do not put a `/dev` URL in the checklist. Google documents `/dev` as an editor-only test deployment.
+## 3. Deploy web app
 
-## 5. Connect and activate the static client
+Deploy → New deployment → Web app.
 
-In `checklist.html`, edit only the `appConfig` JSON block:
+- Execute as: deploying owner.
+- Access: the intended public/anonymous option.
+- Copy the URL ending in `/exec`.
+- Do not use `/dev` in the client.
+
+## 4. Enable client only after staging
+
+Update only `appConfig` in `checklist.html`:
 
 ```json
 {
@@ -56,37 +69,33 @@ In `checklist.html`, edit only the `appConfig` JSON block:
 }
 ```
 
-The final-send wrapper remains hidden unless both the flag is `true` and the endpoint is an HTTPS `script.google.com` URL ending in `/exec`. No build step is required; deploy the static files exactly as normal.
+## 5. Acceptance test
 
-## 6. Staging acceptance before production
+Use synthetic data and verify:
 
-Use a separate spreadsheet/deployment first. Submit a clearly synthetic checklist record and verify:
+1. Apps Script returns `ok:true`.
+2. `sinks.sheets:true` and, after Supabase is configured, `sinks.supabase:true`.
+3. One row appears in `Submissions`.
+4. 21 category rows, 289 task rows and 8 quota rows appear for the current template.
+5. Daily rows match the snapshot's locally accumulated active days.
+6. Supabase has one matching `analytics_submissions` record and child rows.
+7. Re-send the exact same `submissionId`: neither sink creates a second dataset.
+8. Unknown fields, malformed UUIDs, wrong aggregate totals, broken link invariants and disallowed origins are rejected.
+9. Nicknames beginning with spreadsheet-formula prefixes are stored as text in Sheets.
+10. Actual user post URLs never appear in the request payload, Sheets or Supabase.
 
-- the browser receives JSON with `ok: true`;
-- exactly one row appears;
-- repeating the same UUID returns `duplicate: true` without adding a row;
-- unknown fields, bad UUIDs, unsupported templates/origins, and out-of-range counts are rejected;
-- nickname text beginning with `=`, `+`, `-`, or `@` is stored as text rather than evaluated as a formula;
-- concurrent submissions do not duplicate IDs;
-- rate-limit rejection returns `reason: "rate_limited"`;
-- the Apps Script execution dashboard shows no unexpected failures.
+## 6. Partial sink retry
 
-The production client uses `text/plain` for a CORS-simple POST and follows the Apps Script web-app redirect. Error responses are JSON objects; Apps Script `TextOutput` does not let this script assign conventional application HTTP status codes, so the client checks the `ok` field.
+If Sheets succeeds and Supabase fails, or vice versa, the gateway returns `ok:false` when the failed sink is required. The browser retains the same pending UUID. Retrying is safe because:
 
-## 7. Operations and updates
+- Sheets checks the submission UUID before writing.
+- Supabase RPC uses `submission_id` as its primary idempotency key and returns duplicate success.
 
-- Apps Script and Sheets quotas vary by account type and can change. Monitor the Apps Script **Executions** dashboard and spreadsheet growth.
-- The cache-based rate budget is global and deliberately approximate; durable replay protection comes from the UUID column in the sheet.
-- Apps Script's request event does not expose a trustworthy client IP or authenticated user for this anonymous deployment. `sourceOrigin` is client-asserted and only an anti-accident signal.
-- To add a season/template, update `OWNER_SETUP.templateTaskLimits`, rerun `setupReceiver`, create a new deployment version, and update the client's template version only when its task count is correct.
-- To disable collection immediately, set `finalStatsEnabled` to `false` in the static client. The receiver can remain deployed while the control is hidden.
-- Keep older deployment versions only as long as rollback requires; Apps Script limits the number of versions.
+## 7. Operations
 
-Official references:
-
-- [Apps Script web apps and `/exec` versus `/dev`](https://developers.google.com/apps-script/guides/web)
-- [PropertiesService](https://developers.google.com/apps-script/reference/properties/properties-service)
-- [LockService](https://developers.google.com/apps-script/reference/lock/lock-service)
-- [CacheService](https://developers.google.com/apps-script/reference/cache/cache-service)
-- [Apps Script quotas](https://developers.google.com/apps-script/guides/services/quotas)
-- [V8 runtime](https://developers.google.com/apps-script/guides/v8-runtime)
+- Monitor Apps Script Executions and Supabase database usage.
+- Rotate the Supabase secret immediately if exposed.
+- Keep the secret out of logs.
+- Update `OWNER_SETUP.templatePolicies` when the release template changes task/category/quota counts.
+- Review allowed origins when preview/production hosts change.
+- Decide retention/deletion policy for pseudonymous analytics and nicknames.
